@@ -210,8 +210,8 @@ void THurryUp2D::doDraw(Graphics& gfx)
 	gfx.mPerspGraph.setPort();
 	mScreen->draw(gfx, gfx.mPerspGraph);
 	if (mState == 3 && mDoDraw) {
-		f32 width  = mPaneSunW->getWidth();
-		f32 height = mPaneSunW->getHeight();
+		Vector2f wpos(mWhitePane->_1A8.x - 56.0f, mWhitePane->_1A8.y);
+		Vector2f sunpos(mPaneSunW->getWidth(), mPaneSunW->getHeight());
 
 		GXClearVtxDesc();
 		GXSetVtxDesc(GX_VA_POS, GX_DIRECT);
@@ -221,328 +221,40 @@ void THurryUp2D::doDraw(Graphics& gfx)
 		GXSetNumTevStages(1);
 		GXSetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD_NULL, GX_TEXMAP_NULL, GX_COLOR0A0);
 		GXSetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
-		u32 flag = mParams[5].mAlpha1;
+		u32 flag = (mWhitePane->mAlpha >> 1) & 0xff;
 		if (flag > 0x80) {
 			flag = 0x80;
 		}
-		f32 calc = flag * mFadeFraction;
-		JUtility::TColor color(255, 255, 255, calc);
-		GXSetChanMatColor(GX_COLOR_NULL, color);
+		int calc = f32((u8)flag) * mFadeFraction;
+		GXSetChanMatColor(GX_COLOR0A0, (GXColor) { 255, 255, 255, calc });
 		GXSetCullMode(GX_CULL_NONE);
 		GXLoadPosMtxImm(mWhitePane->mMatrix.mMatrix.mtxView, 0);
 
-		GXBegin(GX_TRIANGLES, GX_VTXFMT0, 216);
-		for (int i = 0; i < 26; i++) {
-			// this is just a bunch of nonsense guessing
-			f32 y        = mWhitePane->_1A8.y;
-			f32 test0    = (56.0f - mWhitePane->_1A8.x);
-			f32 test     = 80.0f - test0;
-			f32 test1    = cosf(-test);
-			f32 test2    = sinf(-test);
+		f32 angleStep = 10.0f;
+		u16 max       = 360 / (int)angleStep;
+
+		GXBegin(GX_TRIANGLES, GX_VTXFMT0, max * 6);
+		for (int i = 0; i < max; i++) {
+			f32 s2 = (f32(i) * 10.0f * TAU) / 360.0f;
+			f32 s4 = (f32(i + 1) * 10.0f * TAU) / 360.0f;
+			f32 s1 = sinf(s2) * 80.0f + wpos.x;
+			s2     = -(cosf(s2) * 80.0f - wpos.y);
+			f32 s3 = sinf(s4) * 80.0f + wpos.x;
+			s4     = -(cosf(s4) * 80.0f - wpos.y);
+
 			f32 zero     = 0.0f;
 			f32 minusone = -1.0f;
 
-			GX_WRITE_F32(test0);
-			GX_WRITE_F32(y);
-			GX_WRITE_F32(zero);
-			GX_WRITE_F32(test);
-			GX_WRITE_F32(test1);
-			GX_WRITE_F32(zero);
-			GX_WRITE_F32(test2);
-			GX_WRITE_F32(test);
-			GX_WRITE_F32(zero);
-			GX_WRITE_F32(width);
-			GX_WRITE_F32(height);
-			GX_WRITE_F32(minusone);
-			GX_WRITE_F32(test);
-			GX_WRITE_F32(test1);
-			GX_WRITE_F32(zero);
-			GX_WRITE_F32(test2);
-			GX_WRITE_F32(test);
-			GX_WRITE_F32(zero);
+			GXNormal3f32(wpos.x, wpos.y, zero);
+			GXPosition3f32(s1, s2, zero);
+			GXPosition3f32(s3, s4, zero);
+
+			GXNormal3f32(sunpos.x, sunpos.y, minusone);
+			GXPosition3f32(s1, s2, zero);
+			GXPosition3f32(s3, s4, zero);
 		}
+		GXEnd();
 	}
-	/*
-	stwu     r1, -0xa0(r1)
-	mflr     r0
-	stw      r0, 0xa4(r1)
-	stfd     f31, 0x90(r1)
-	psq_st   f31, 152(r1), 0, qr0
-	stfd     f30, 0x80(r1)
-	psq_st   f30, 136(r1), 0, qr0
-	stfd     f29, 0x70(r1)
-	psq_st   f29, 120(r1), 0, qr0
-	stfd     f28, 0x60(r1)
-	psq_st   f28, 104(r1), 0, qr0
-	stw      r31, 0x5c(r1)
-	stw      r30, 0x58(r1)
-	lbz      r0, mIsSection__Q28Morimura9TTestBase@sda21(r13)
-	mr       r30, r3
-	mr       r31, r4
-	cmplwi   r0, 0
-	beq      lbl_80346A74
-	li       r3, 1
-	li       r4, 0
-	bl       GXSetPixelFmt
-
-lbl_80346A74:
-	addi     r3, r31, 0x190
-	lwz      r12, 0x190(r31)
-	lwz      r12, 0x14(r12)
-	mtctr    r12
-	bctrl
-	lwz      r3, 0x7c(r30)
-	mr       r4, r31
-	addi     r5, r31, 0x190
-	lwz      r12, 0(r3)
-	lwz      r12, 0x9c(r12)
-	mtctr    r12
-	bctrl
-	lwz      r0, 0xb0(r30)
-	cmpwi    r0, 3
-	bne      lbl_80346DF4
-	lbz      r0, 0xc4(r30)
-	cmplwi   r0, 0
-	beq      lbl_80346DF4
-	lwz      r4, 0x88(r30)
-	lwz      r3, 0x8c(r30)
-	lfs      f0, lbl_8051E288@sda21(r2)
-	lfs      f1, 0x1a8(r3)
-	lfs      f3, 0x2c(r4)
-	lfs      f2, 0x24(r4)
-	fsubs    f31, f1, f0
-	lfs      f1, 0x28(r4)
-	lfs      f0, 0x20(r4)
-	fsubs    f28, f3, f2
-	lfs      f30, 0x1ac(r3)
-	fsubs    f29, f1, f0
-	bl       GXClearVtxDesc
-	li       r3, 9
-	li       r4, 1
-	bl       GXSetVtxDesc
-	li       r3, 0
-	li       r4, 9
-	li       r5, 1
-	li       r6, 4
-	li       r7, 0
-	bl       GXSetVtxAttrFmt
-	li       r3, 1
-	bl       GXSetNumChans
-	li       r3, 4
-	li       r4, 0
-	li       r5, 0
-	li       r6, 0
-	li       r7, 0
-	li       r8, 0
-	li       r9, 2
-	bl       GXSetChanCtrl
-	li       r3, 1
-	bl       GXSetNumTevStages
-	li       r3, 0
-	li       r4, 0xff
-	li       r5, 0xff
-	li       r6, 4
-	bl       GXSetTevOrder
-	li       r3, 0
-	li       r4, 4
-	bl       GXSetTevOp
-	lwz      r3, 0x8c(r30)
-	lbz      r0, 0x1e0(r3)
-	rlwinm   r0, r0, 0x1f, 0x18, 0x1f
-	cmplwi   r0, 0x80
-	ble      lbl_80346B7C
-	li       r0, 0x80
-
-lbl_80346B7C:
-	clrlwi   r3, r0, 0x18
-	lis      r0, 0x4330
-	stw      r3, 0x14(r1)
-	addi     r4, r1, 0xc
-	lwz      r5, lbl_8051E284@sda21(r2)
-	li       r3, 4
-	stw      r0, 0x10(r1)
-	lfd      f2, lbl_8051E2A8@sda21(r2)
-	lfd      f1, 0x10(r1)
-	lfs      f0, 0x40(r30)
-	fsubs    f1, f1, f2
-	stw      r5, 8(r1)
-	fmuls    f0, f1, f0
-	fctiwz   f0, f0
-	stfd     f0, 0x18(r1)
-	lwz      r0, 0x1c(r1)
-	stb      r0, 0xb(r1)
-	lwz      r0, 8(r1)
-	stw      r0, 0xc(r1)
-	bl       GXSetChanMatColor
-	li       r3, 0
-	bl       GXSetCullMode
-	lwz      r3, 0x8c(r30)
-	li       r4, 0
-	addi     r3, r3, 0x1b0
-	bl       GXLoadPosMtxImm
-	lfs      f0, lbl_8051E280@sda21(r2)
-	li       r5, 0x168
-	li       r3, 0x90
-	li       r4, 0
-	fctiwz   f0, f0
-	stfd     f0, 0x20(r1)
-	lwz      r0, 0x24(r1)
-	divw     r0, r5, r0
-	clrlwi   r31, r0, 0x10
-	mulli    r0, r31, 6
-	clrlwi   r5, r0, 0x10
-	bl       GXBegin
-	lis      r3, sincosTable___5JMath@ha
-	lfs      f5, lbl_8051E28C@sda21(r2)
-	addi     r6, r3, sincosTable___5JMath@l
-	lfs      f4, lbl_8051E280@sda21(r2)
-	lfd      f3, lbl_8051E268@sda21(r2)
-	li       r3, 0
-	lfs      f2, lbl_8051E290@sda21(r2)
-	lis      r7, 0x4330
-	lfs      f1, lbl_8051E294@sda21(r2)
-	lis      r4, 0xcc01
-	lfs      f0, lbl_8051E258@sda21(r2)
-	lfs      f9, lbl_8051E29C@sda21(r2)
-	lfs      f7, lbl_8051E2A0@sda21(r2)
-	mtctr    r31
-	cmpwi    r31, 0
-	ble      lbl_80346DF4
-
-lbl_80346C54:
-	xoris    r5, r3, 0x8000
-	addi     r0, r3, 1
-	stw      r5, 0x24(r1)
-	xoris    r0, r0, 0x8000
-	stw      r7, 0x20(r1)
-	lfd      f6, 0x20(r1)
-	stw      r0, 0x1c(r1)
-	fsubs    f8, f6, f3
-	stw      r7, 0x18(r1)
-	lfd      f6, 0x18(r1)
-	fmuls    f8, f4, f8
-	fsubs    f6, f6, f3
-	fmuls    f8, f5, f8
-	fmuls    f6, f4, f6
-	fdivs    f10, f8, f2
-	fmuls    f6, f5, f6
-	fcmpo    cr0, f10, f0
-	fdivs    f6, f6, f2
-	bge      lbl_80346CCC
-	lfs      f8, lbl_8051E298@sda21(r2)
-	lis      r5, sincosTable___5JMath@ha
-	addi     r5, r5, sincosTable___5JMath@l
-	fmuls    f8, f10, f8
-	fctiwz   f8, f8
-	stfd     f8, 0x10(r1)
-	lwz      r0, 0x14(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f8, r5, r0
-	fneg     f8, f8
-	b        lbl_80346CF0
-
-lbl_80346CCC:
-	lfs      f8, lbl_8051E29C@sda21(r2)
-	lis      r5, sincosTable___5JMath@ha
-	addi     r5, r5, sincosTable___5JMath@l
-	fmuls    f8, f10, f8
-	fctiwz   f8, f8
-	stfd     f8, 0x28(r1)
-	lwz      r0, 0x2c(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f8, r5, r0
-
-lbl_80346CF0:
-	fcmpo    cr0, f10, f0
-	fmadds   f11, f1, f8, f31
-	bge      lbl_80346D00
-	fneg     f10, f10
-
-lbl_80346D00:
-	fmuls    f8, f10, f9
-	fcmpo    cr0, f6, f0
-	fctiwz   f8, f8
-	stfd     f8, 0x30(r1)
-	lwz      r0, 0x34(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	add      r5, r6, r0
-	lfs      f8, 4(r5)
-	fnmsubs  f10, f1, f8, f30
-	bge      lbl_80346D54
-	lfs      f8, lbl_8051E298@sda21(r2)
-	lis      r5, sincosTable___5JMath@ha
-	addi     r5, r5, sincosTable___5JMath@l
-	fmuls    f8, f6, f8
-	fctiwz   f8, f8
-	stfd     f8, 0x38(r1)
-	lwz      r0, 0x3c(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f8, r5, r0
-	fneg     f8, f8
-	b        lbl_80346D74
-
-lbl_80346D54:
-	fmuls    f8, f6, f9
-	lis      r5, sincosTable___5JMath@ha
-	addi     r5, r5, sincosTable___5JMath@l
-	fctiwz   f8, f8
-	stfd     f8, 0x40(r1)
-	lwz      r0, 0x44(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f8, r5, r0
-
-lbl_80346D74:
-	fcmpo    cr0, f6, f0
-	fmadds   f8, f1, f8, f31
-	bge      lbl_80346D84
-	fneg     f6, f6
-
-lbl_80346D84:
-	fmuls    f6, f6, f9
-	addi     r3, r3, 1
-	fctiwz   f6, f6
-	stfd     f6, 0x48(r1)
-	lwz      r0, 0x4c(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	add      r5, r6, r0
-	lfs      f6, 4(r5)
-	stfs     f31, -0x8000(r4)
-	fnmsubs  f6, f1, f6, f30
-	stfs     f30, -0x8000(r4)
-	stfs     f0, -0x8000(r4)
-	stfs     f11, -0x8000(r4)
-	stfs     f10, -0x8000(r4)
-	stfs     f0, -0x8000(r4)
-	stfs     f8, -0x8000(r4)
-	stfs     f6, -0x8000(r4)
-	stfs     f0, -0x8000(r4)
-	stfs     f29, -0x8000(r4)
-	stfs     f28, -0x8000(r4)
-	stfs     f7, -0x8000(r4)
-	stfs     f11, -0x8000(r4)
-	stfs     f10, -0x8000(r4)
-	stfs     f0, -0x8000(r4)
-	stfs     f8, -0x8000(r4)
-	stfs     f6, -0x8000(r4)
-	stfs     f0, -0x8000(r4)
-	bdnz     lbl_80346C54
-
-lbl_80346DF4:
-	psq_l    f31, 152(r1), 0, qr0
-	lfd      f31, 0x90(r1)
-	psq_l    f30, 136(r1), 0, qr0
-	lfd      f30, 0x80(r1)
-	psq_l    f29, 120(r1), 0, qr0
-	lfd      f29, 0x70(r1)
-	psq_l    f28, 104(r1), 0, qr0
-	lfd      f28, 0x60(r1)
-	lwz      r31, 0x5c(r1)
-	lwz      r0, 0xa4(r1)
-	lwz      r30, 0x58(r1)
-	mtlr     r0
-	addi     r1, r1, 0xa0
-	blr
-	*/
 }
 
 /**
@@ -624,17 +336,14 @@ void THurryUp2D::init()
 
 	if (mDoDraw) {
 		mWhitePane->show();
-		J2DBlend info1(1, 6, 7, 0);
-		// J2DBlend blend(info1);
+		J2DBlend info1(GX_BM_BLEND, GX_BL_DSTALPHA, GX_BL_INVDSTALPHA, GX_LO_CLEAR);
 		static_cast<J2DPictureEx*>(mPaneSunW)->getMaterial()->mPeBlock.setBlend(info1);
 
-		J2DBlend info2(1, 1, 0, 0);
-		// J2DBlend blend2(info2);
+		J2DBlend info2(GX_BM_BLEND, GX_BL_ONE, GX_BL_ZERO, GX_LO_CLEAR);
 		mWhitePane->getMaterial()->mPeBlock.setBlend(info2);
 		mWhitePane->mAlpha = 0;
 	} else {
-		J2DBlend info(1, 4, 5, 0);
-		// J2DBlend blend(info);
+		J2DBlend info(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
 		J2DPictureEx* pane = static_cast<J2DPictureEx*>(mScreen->search('sunw'));
 		pane->getMaterial()->mPeBlock.setBlend(info);
 		mWhitePane->hide();

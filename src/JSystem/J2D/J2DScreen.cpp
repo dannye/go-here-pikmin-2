@@ -195,12 +195,13 @@ bool J2DScreen::getScreenInformation(JSURandomInputStream* input)
  * @note Address: 0x8003F9E8
  * @note Size: 0x560
  */
-u32 J2DScreen::makeHierarchyPanes(J2DPane* parent, JSURandomInputStream* input, u32 flags, JKRArchive* archive)
+s32 J2DScreen::makeHierarchyPanes(J2DPane* parent, JSURandomInputStream* input, u32 flags, JKRArchive* archive)
 {
 	J2DPane* currentPane = parent;
 	while (true) {
 		J2DScrnBlockHeader header;
-		input->peek(&header, 8);
+		input->peek(&header, sizeof(J2DScrnBlockHeader));
+
 		switch (header.mBloBlockType) {
 		case 'EXT1':
 			input->seek(header.mBlockLength, SEEK_CUR);
@@ -208,6 +209,7 @@ u32 J2DScreen::makeHierarchyPanes(J2DPane* parent, JSURandomInputStream* input, 
 
 		case 'BGN1': {
 			input->seek(header.mBlockLength, SEEK_CUR);
+
 			s32 result = makeHierarchyPanes(currentPane, input, flags, archive);
 			if (result) {
 				return result;
@@ -219,14 +221,12 @@ u32 J2DScreen::makeHierarchyPanes(J2DPane* parent, JSURandomInputStream* input, 
 			return 0;
 
 		case 'TEX1':
-			mTexRes = getResReference(input, flags);
-			if (!mTexRes) {
+			if ((mTexRes = getResReference(input, flags)) == nullptr) {
 				return 2;
 			}
 			break;
 		case 'FNT1':
-			mFontRes = getResReference(input, flags);
-			if (!mFontRes) {
+			if ((mFontRes = getResReference(input, flags)) == nullptr) {
 				return 2;
 			}
 			break;
@@ -236,443 +236,18 @@ u32 J2DScreen::makeHierarchyPanes(J2DPane* parent, JSURandomInputStream* input, 
 			}
 			break;
 		default:
-
-			if (!archive) {
+			if (archive == nullptr) {
 				currentPane = createPane(header, input, parent, flags);
 			} else {
 				currentPane = createPane(header, input, parent, flags, archive);
 			}
-			if (!currentPane) {
+
+			if (currentPane == nullptr) {
 				return 2;
 			}
 			break;
 		}
 	}
-	/*
-	.loc_0x0:
-	  stwu      r1, -0x50(r1)
-	  mflr      r0
-	  stw       r0, 0x54(r1)
-	  stmw      r21, 0x24(r1)
-	  mr        r27, r4
-	  lis       r4, 0x464E
-	  mr        r28, r3
-	  mr        r29, r5
-	  mr        r30, r6
-	  mr        r31, r7
-	  mr        r25, r27
-	  addi      r26, r4, 0x5431
-
-	.loc_0x30:
-	  mr        r3, r29
-	  addi      r4, r1, 0x18
-	  li        r5, 0x8
-	  bl        -0x193D8
-	  lwz       r4, 0x18(r1)
-	  cmpw      r4, r26
-	  beq-      .loc_0x49C
-	  bge-      .loc_0x8C
-	  lis       r3, 0x454E
-	  addi      r0, r3, 0x4431
-	  cmpw      r4, r0
-	  beq-      .loc_0x460
-	  bge-      .loc_0x78
-	  lis       r3, 0x4247
-	  addi      r0, r3, 0x4E31
-	  cmpw      r4, r0
-	  beq-      .loc_0xCC
-	  b         .loc_0x4E4
-
-	.loc_0x78:
-	  lis       r3, 0x4558
-	  addi      r0, r3, 0x5431
-	  cmpw      r4, r0
-	  beq-      .loc_0xB4
-	  b         .loc_0x4E4
-
-	.loc_0x8C:
-	  lis       r3, 0x5445
-	  addi      r0, r3, 0x5831
-	  cmpw      r4, r0
-	  beq-      .loc_0x478
-	  bge-      .loc_0x4E4
-	  lis       r3, 0x4D41
-	  addi      r0, r3, 0x5431
-	  cmpw      r4, r0
-	  beq-      .loc_0x4C0
-	  b         .loc_0x4E4
-
-	.loc_0xB4:
-	  lwz       r4, 0x1C(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x193A0
-	  li        r3, 0x1
-	  b         .loc_0x54C
-
-	.loc_0xCC:
-	  lwz       r4, 0x1C(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x193B8
-	  lis       r3, 0x464E
-	  mr        r22, r25
-	  addi      r24, r3, 0x5431
-
-	.loc_0xE8:
-	  mr        r3, r29
-	  addi      r4, r1, 0x10
-	  li        r5, 0x8
-	  bl        -0x19490
-	  lwz       r4, 0x10(r1)
-	  cmpw      r4, r24
-	  beq-      .loc_0x3A4
-	  bge-      .loc_0x144
-	  lis       r3, 0x454E
-	  addi      r0, r3, 0x4431
-	  cmpw      r4, r0
-	  beq-      .loc_0x368
-	  bge-      .loc_0x130
-	  lis       r3, 0x4247
-	  addi      r0, r3, 0x4E31
-	  cmpw      r4, r0
-	  beq-      .loc_0x184
-	  b         .loc_0x3EC
-
-	.loc_0x130:
-	  lis       r3, 0x4558
-	  addi      r0, r3, 0x5431
-	  cmpw      r4, r0
-	  beq-      .loc_0x16C
-	  b         .loc_0x3EC
-
-	.loc_0x144:
-	  lis       r3, 0x5445
-	  addi      r0, r3, 0x5831
-	  cmpw      r4, r0
-	  beq-      .loc_0x380
-	  bge-      .loc_0x3EC
-	  lis       r3, 0x4D41
-	  addi      r0, r3, 0x5431
-	  cmpw      r4, r0
-	  beq-      .loc_0x3C8
-	  b         .loc_0x3EC
-
-	.loc_0x16C:
-	  lwz       r4, 0x14(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x19458
-	  li        r3, 0x1
-	  b         .loc_0x454
-
-	.loc_0x184:
-	  lwz       r4, 0x14(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x19470
-	  lis       r3, 0x464E
-	  mr        r21, r22
-	  addi      r23, r3, 0x5431
-
-	.loc_0x1A0:
-	  mr        r3, r29
-	  addi      r4, r1, 0x8
-	  li        r5, 0x8
-	  bl        -0x19548
-	  lwz       r4, 0x8(r1)
-	  cmpw      r4, r23
-	  beq-      .loc_0x2AC
-	  bge-      .loc_0x1FC
-	  lis       r3, 0x454E
-	  addi      r0, r3, 0x4431
-	  cmpw      r4, r0
-	  beq-      .loc_0x270
-	  bge-      .loc_0x1E8
-	  lis       r3, 0x4247
-	  addi      r0, r3, 0x4E31
-	  cmpw      r4, r0
-	  beq-      .loc_0x23C
-	  b         .loc_0x2F4
-
-	.loc_0x1E8:
-	  lis       r3, 0x4558
-	  addi      r0, r3, 0x5431
-	  cmpw      r4, r0
-	  beq-      .loc_0x224
-	  b         .loc_0x2F4
-
-	.loc_0x1FC:
-	  lis       r3, 0x5445
-	  addi      r0, r3, 0x5831
-	  cmpw      r4, r0
-	  beq-      .loc_0x288
-	  bge-      .loc_0x2F4
-	  lis       r3, 0x4D41
-	  addi      r0, r3, 0x5431
-	  cmpw      r4, r0
-	  beq-      .loc_0x2D0
-	  b         .loc_0x2F4
-
-	.loc_0x224:
-	  lwz       r4, 0xC(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x19510
-	  li        r3, 0x1
-	  b         .loc_0x35C
-
-	.loc_0x23C:
-	  lwz       r4, 0xC(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x19528
-	  mr        r3, r28
-	  mr        r4, r21
-	  mr        r5, r29
-	  mr        r6, r30
-	  mr        r7, r31
-	  bl        .loc_0x0
-	  cmpwi     r3, 0
-	  beq+      .loc_0x1A0
-	  b         .loc_0x35C
-
-	.loc_0x270:
-	  lwz       r4, 0xC(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x1955C
-	  li        r3, 0
-	  b         .loc_0x35C
-
-	.loc_0x288:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  bl        0xA04
-	  cmplwi    r3, 0
-	  stw       r3, 0x108(r28)
-	  bne+      .loc_0x1A0
-	  li        r3, 0x2
-	  b         .loc_0x35C
-
-	.loc_0x2AC:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  bl        0x9E0
-	  cmplwi    r3, 0
-	  stw       r3, 0x10C(r28)
-	  bne+      .loc_0x1A0
-	  li        r3, 0x2
-	  b         .loc_0x35C
-
-	.loc_0x2D0:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  mr        r6, r31
-	  bl        0xAAC
-	  rlwinm.   r0,r3,0,24,31
-	  bne+      .loc_0x1A0
-	  li        r3, 0x2
-	  b         .loc_0x35C
-
-	.loc_0x2F4:
-	  cmplwi    r31, 0
-	  bne-      .loc_0x324
-	  mr        r3, r28
-	  mr        r5, r29
-	  lwz       r12, 0x0(r28)
-	  mr        r6, r22
-	  mr        r7, r30
-	  addi      r4, r1, 0x8
-	  lwz       r12, 0x94(r12)
-	  mtctr     r12
-	  bctrl
-	  b         .loc_0x34C
-
-	.loc_0x324:
-	  mr        r3, r28
-	  mr        r5, r29
-	  lwz       r12, 0x0(r28)
-	  mr        r6, r22
-	  mr        r7, r30
-	  mr        r8, r31
-	  lwz       r12, 0x98(r12)
-	  addi      r4, r1, 0x8
-	  mtctr     r12
-	  bctrl
-
-	.loc_0x34C:
-	  cmplwi    r3, 0
-	  mr        r21, r3
-	  bne+      .loc_0x1A0
-	  li        r3, 0x2
-
-	.loc_0x35C:
-	  cmpwi     r3, 0
-	  beq+      .loc_0xE8
-	  b         .loc_0x454
-
-	.loc_0x368:
-	  lwz       r4, 0x14(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x19654
-	  li        r3, 0
-	  b         .loc_0x454
-
-	.loc_0x380:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  bl        0x90C
-	  cmplwi    r3, 0
-	  stw       r3, 0x108(r28)
-	  bne+      .loc_0xE8
-	  li        r3, 0x2
-	  b         .loc_0x454
-
-	.loc_0x3A4:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  bl        0x8E8
-	  cmplwi    r3, 0
-	  stw       r3, 0x10C(r28)
-	  bne+      .loc_0xE8
-	  li        r3, 0x2
-	  b         .loc_0x454
-
-	.loc_0x3C8:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  mr        r6, r31
-	  bl        0x9B4
-	  rlwinm.   r0,r3,0,24,31
-	  bne+      .loc_0xE8
-	  li        r3, 0x2
-	  b         .loc_0x454
-
-	.loc_0x3EC:
-	  cmplwi    r31, 0
-	  bne-      .loc_0x41C
-	  mr        r3, r28
-	  mr        r5, r29
-	  lwz       r12, 0x0(r28)
-	  mr        r6, r25
-	  mr        r7, r30
-	  addi      r4, r1, 0x10
-	  lwz       r12, 0x94(r12)
-	  mtctr     r12
-	  bctrl
-	  b         .loc_0x444
-
-	.loc_0x41C:
-	  mr        r3, r28
-	  mr        r5, r29
-	  lwz       r12, 0x0(r28)
-	  mr        r6, r25
-	  mr        r7, r30
-	  mr        r8, r31
-	  lwz       r12, 0x98(r12)
-	  addi      r4, r1, 0x10
-	  mtctr     r12
-	  bctrl
-
-	.loc_0x444:
-	  cmplwi    r3, 0
-	  mr        r22, r3
-	  bne+      .loc_0xE8
-	  li        r3, 0x2
-
-	.loc_0x454:
-	  cmpwi     r3, 0
-	  beq+      .loc_0x30
-	  b         .loc_0x54C
-
-	.loc_0x460:
-	  lwz       r4, 0x1C(r1)
-	  mr        r3, r29
-	  li        r5, 0x1
-	  bl        -0x1974C
-	  li        r3, 0
-	  b         .loc_0x54C
-
-	.loc_0x478:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  bl        0x814
-	  cmplwi    r3, 0
-	  stw       r3, 0x108(r28)
-	  bne+      .loc_0x30
-	  li        r3, 0x2
-	  b         .loc_0x54C
-
-	.loc_0x49C:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  bl        0x7F0
-	  cmplwi    r3, 0
-	  stw       r3, 0x10C(r28)
-	  bne+      .loc_0x30
-	  li        r3, 0x2
-	  b         .loc_0x54C
-
-	.loc_0x4C0:
-	  mr        r3, r28
-	  mr        r4, r29
-	  mr        r5, r30
-	  mr        r6, r31
-	  bl        0x8BC
-	  rlwinm.   r0,r3,0,24,31
-	  bne+      .loc_0x30
-	  li        r3, 0x2
-	  b         .loc_0x54C
-
-	.loc_0x4E4:
-	  cmplwi    r31, 0
-	  bne-      .loc_0x514
-	  mr        r3, r28
-	  mr        r5, r29
-	  lwz       r12, 0x0(r28)
-	  mr        r6, r27
-	  mr        r7, r30
-	  addi      r4, r1, 0x18
-	  lwz       r12, 0x94(r12)
-	  mtctr     r12
-	  bctrl
-	  b         .loc_0x53C
-
-	.loc_0x514:
-	  mr        r3, r28
-	  mr        r5, r29
-	  lwz       r12, 0x0(r28)
-	  mr        r6, r27
-	  mr        r7, r30
-	  mr        r8, r31
-	  lwz       r12, 0x98(r12)
-	  addi      r4, r1, 0x18
-	  mtctr     r12
-	  bctrl
-
-	.loc_0x53C:
-	  cmplwi    r3, 0
-	  mr        r25, r3
-	  bne+      .loc_0x30
-	  li        r3, 0x2
-
-	.loc_0x54C:
-	  lmw       r21, 0x24(r1)
-	  lwz       r0, 0x54(r1)
-	  mtlr      r0
-	  addi      r1, r1, 0x50
-	  blr
-	*/
 }
 
 /**
@@ -963,259 +538,51 @@ bool J2DScreen::createMaterial(JSURandomInputStream* input, u32 flags, JKRArchiv
 		mMaterials = new (-4) J2DMaterial[mMaterialCount];
 	}
 
-	J2DMaterialBlock* blocks = (J2DMaterialBlock*)new (-4) u8[blank[1]];
-	if (mMaterials && blocks) {
+	u8* buffer = new (-4) u8[blank[1]];
+	if (mMaterials && buffer) {
+		J2DMaterialBlock* blocks = (J2DMaterialBlock*)buffer;
 		input->seek(initialPosition, SEEK_SET);
-		input->read(blocks, blank[1]);
+		input->read(buffer, blank[1]);
 
 		J2DMaterialFactory factory(blocks[0]);
 		for (u16 i = 0; i < mMaterialCount; i++) {
 			factory.create(&mMaterials[i], i, flags, mTexRes, mFontRes, archive);
 		}
 		if ((flags & 0x1f0000)) {
-			ResNTAB* tab = new ResNTAB;
-			if (tab) {
-				mNameTab = new JUTNameTab(tab);
-				delete[] tab;
+			u32 offset     = buffer[0x14] << 0x18 | buffer[0x15] << 0x10 | buffer[0x16] << 8 | buffer[0x17];
+			ResNTAB* sec_s = (ResNTAB*)(buffer + offset);
+			u16 entryNum   = sec_s->mEntryNum;
+			u16 lastOffset = sec_s->mEntries[entryNum - 1].mOffs;
+			char* ptr      = (char*)sec_s;
+			u16 size       = lastOffset;
+			while (ptr[size] != 0) {
+				size++;
+			}
+			size++;
+
+			u8* nametab = new u8[size];
+			if (nametab == nullptr) {
+				goto failure;
+			}
+			for (u16 i = 0; i < size; i++) {
+				nametab[i] = (buffer + offset)[i];
+			}
+
+			mNameTab = new JUTNameTab((ResNTAB*)nametab);
+			if (mNameTab == nullptr) {
+				delete[] nametab;
+				goto failure;
 			}
 		}
-		delete[] blocks;
+	success:
+		delete[] buffer;
 		return true;
 	}
-	delete[] blocks;
-	delete[] mMaterials;
-	mMaterialCount = 0;
-	mMaterials     = nullptr;
-	delete[] mTexRes;
-	mTexRes = nullptr;
-	delete[] mFontRes;
-	mFontRes = nullptr;
-	if (mNameTab) {
-		delete[] mNameTab->mNameTable;
-		delete mNameTab;
-		mNameTab = nullptr;
-	}
+
+failure:
+	delete[] buffer;
+	clean();
 	return false;
-
-	/*
-	.loc_0x0:
-	  stwu      r1, -0x90(r1)
-	  mflr      r0
-	  stw       r0, 0x94(r1)
-	  stmw      r25, 0x74(r1)
-	  mr        r25, r4
-	  mr        r31, r3
-	  mr        r26, r5
-	  mr        r3, r25
-	  mr        r27, r6
-	  lwz       r12, 0x0(r25)
-	  lwz       r12, 0x1C(r12)
-	  mtctr     r12
-	  bctrl
-	  mr        r0, r3
-	  mr        r3, r25
-	  mr        r29, r0
-	  addi      r4, r1, 0xC
-	  li        r5, 0x8
-	  bl        -0x1A3E8
-	  mr        r3, r25
-	  addi      r4, r1, 0x8
-	  li        r5, 0x2
-	  bl        -0x1A3F8
-	  lhz       r0, 0x8(r1)
-	  mr        r3, r25
-	  li        r4, 0x2
-	  sth       r0, 0x102(r31)
-	  lwz       r12, 0x0(r25)
-	  lwz       r12, 0x10(r12)
-	  mtctr     r12
-	  bctrl
-	  rlwinm.   r30,r26,0,11,15
-	  beq-      .loc_0xB8
-	  lhz       r28, 0x102(r31)
-	  mulli     r3, r28, 0x88
-	  addi      r3, r3, 0x10
-	  bl        -0x1C858
-	  lis       r4, 0x8005
-	  lis       r5, 0x8005
-	  addi      r4, r4, 0x1EA4
-	  mr        r7, r28
-	  addi      r5, r5, 0x2188
-	  li        r6, 0x88
-	  bl        0x811D0
-	  stw       r3, 0x104(r31)
-	  b         .loc_0xEC
-
-	.loc_0xB8:
-	  lhz       r28, 0x102(r31)
-	  li        r4, -0x4
-	  mulli     r3, r28, 0x88
-	  addi      r3, r3, 0x10
-	  bl        -0x1C844
-	  lis       r4, 0x8005
-	  lis       r5, 0x8005
-	  addi      r4, r4, 0x1EA4
-	  mr        r7, r28
-	  addi      r5, r5, 0x2188
-	  li        r6, 0x88
-	  bl        0x81198
-	  stw       r3, 0x104(r31)
-
-	.loc_0xEC:
-	  lwz       r3, 0x10(r1)
-	  li        r4, -0x4
-	  bl        -0x1C870
-	  lwz       r0, 0x104(r31)
-	  mr        r28, r3
-	  cmplwi    r0, 0
-	  beq-      .loc_0x258
-	  cmplwi    r28, 0
-	  beq-      .loc_0x258
-	  mr        r3, r25
-	  mr        r4, r29
-	  li        r5, 0
-	  bl        -0x1A188
-	  lwz       r5, 0x10(r1)
-	  mr        r3, r25
-	  mr        r4, r28
-	  bl        -0x1A4CC
-	  mr        r4, r28
-	  addi      r3, r1, 0x14
-	  bl        0x12A3C
-	  li        r25, 0
-	  b         .loc_0x170
-
-	.loc_0x144:
-	  rlwinm    r5,r25,0,16,31
-	  lwz       r4, 0x104(r31)
-	  mulli     r0, r5, 0x88
-	  lwz       r7, 0x108(r31)
-	  lwz       r8, 0x10C(r31)
-	  mr        r6, r26
-	  mr        r9, r27
-	  addi      r3, r1, 0x14
-	  add       r4, r4, r0
-	  bl        0x12BD0
-	  addi      r25, r25, 0x1
-
-	.loc_0x170:
-	  lhz       r0, 0x102(r31)
-	  rlwinm    r3,r25,0,16,31
-	  cmplw     r3, r0
-	  blt+      .loc_0x144
-	  cmplwi    r30, 0
-	  beq-      .loc_0x248
-	  lbz       r0, 0x15(r28)
-	  lbz       r3, 0x14(r28)
-	  rlwinm    r0,r0,16,0,15
-	  lbz       r4, 0x16(r28)
-	  rlwimi    r0,r3,24,0,7
-	  lbz       r5, 0x17(r28)
-	  rlwimi    r0,r4,8,16,23
-	  or        r0, r5, r0
-	  add       r25, r28, r0
-	  lhz       r0, 0x0(r25)
-	  rlwinm    r0,r0,2,0,29
-	  add       r3, r25, r0
-	  lhz       r4, 0x2(r3)
-	  b         .loc_0x1C4
-
-	.loc_0x1C0:
-	  addi      r4, r4, 0x1
-
-	.loc_0x1C4:
-	  rlwinm    r3,r4,0,16,31
-	  lbzx      r0, r25, r3
-	  extsb.    r0, r0
-	  bne+      .loc_0x1C0
-	  addi      r26, r3, 0x1
-	  rlwinm    r3,r26,0,16,31
-	  bl        -0x1C9A4
-	  mr.       r27, r3
-	  beq-      .loc_0x258
-	  rlwinm    r0,r26,0,16,31
-	  li        r5, 0
-	  b         .loc_0x204
-
-	.loc_0x1F4:
-	  rlwinm    r4,r5,0,16,31
-	  addi      r5, r5, 0x1
-	  lbzx      r3, r25, r4
-	  stbx      r3, r27, r4
-
-	.loc_0x204:
-	  rlwinm    r3,r5,0,16,31
-	  cmplw     r3, r0
-	  blt+      .loc_0x1F4
-	  li        r3, 0x10
-	  bl        -0x1CAE4
-	  mr.       r0, r3
-	  beq-      .loc_0x22C
-	  mr        r4, r27
-	  bl        -0x11C8C
-	  mr        r0, r3
-
-	.loc_0x22C:
-	  stw       r0, 0x110(r31)
-	  lwz       r0, 0x110(r31)
-	  cmplwi    r0, 0
-	  bne-      .loc_0x248
-	  mr        r3, r27
-	  bl        -0x1C8DC
-	  b         .loc_0x258
-
-	.loc_0x248:
-	  mr        r3, r28
-	  bl        -0x1C8E8
-	  li        r3, 0x1
-	  b         .loc_0x2DC
-
-	.loc_0x258:
-	  mr        r3, r28
-	  bl        -0x1C8F8
-	  lis       r4, 0x8005
-	  lwz       r3, 0x104(r31)
-	  addi      r4, r4, 0x2188
-	  bl        0x80D68
-	  li        r0, 0
-	  sth       r0, 0x102(r31)
-	  stw       r0, 0x104(r31)
-	  lwz       r3, 0x108(r31)
-	  bl        -0x1C91C
-	  li        r0, 0
-	  stw       r0, 0x108(r31)
-	  lwz       r3, 0x10C(r31)
-	  bl        -0x1C92C
-	  li        r0, 0
-	  stw       r0, 0x10C(r31)
-	  lwz       r3, 0x110(r31)
-	  cmplwi    r3, 0
-	  beq-      .loc_0x2D8
-	  lwz       r3, 0x4(r3)
-	  bl        -0x1C948
-	  lwz       r3, 0x110(r31)
-	  cmplwi    r3, 0
-	  beq-      .loc_0x2D0
-	  lwz       r12, 0x0(r3)
-	  li        r4, 0x1
-	  lwz       r12, 0x8(r12)
-	  mtctr     r12
-	  bctrl
-
-	.loc_0x2D0:
-	  li        r0, 0
-	  stw       r0, 0x110(r31)
-
-	.loc_0x2D8:
-	  li        r3, 0
-
-	.loc_0x2DC:
-	  lmw       r25, 0x74(r1)
-	  lwz       r0, 0x94(r1)
-	  mtlr      r0
-	  addi      r1, r1, 0x90
-	  blr
-	*/
 }
 
 /**
@@ -1358,22 +725,4 @@ void J2DScreen::setAnimation(J2DAnmVtxColor* animation)
 void J2DScreen::setAnimation(J2DAnmVisibilityFull* animation)
 {
 	J2DPane::setVisibileAnimation(animation);
-}
-
-/**
- * @note Address: 0x80040F0C
- * @note Size: 0x20
- */
-void J2DScreen::setAnimation(J2DAnmTransform* animation)
-{
-	J2DPane::setAnimation(animation);
-}
-
-/**
- * @note Address: 0x80040F2C
- * @note Size: 0x20
- */
-void J2DScreen::setAnimation(J2DAnmBase* animation)
-{
-	J2DPane::setAnimation(animation);
 }

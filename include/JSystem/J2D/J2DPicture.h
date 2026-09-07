@@ -111,10 +111,10 @@ struct J2DPicture : public J2DPane {
 	} // _104 (weak)
 	virtual void setBlendColorRatio(f32, f32, f32, f32, f32, f32, f32, f32);                   // _108
 	virtual void setBlendAlphaRatio(f32, f32, f32, f32, f32, f32, f32, f32);                   // _10C
-	virtual ResTIMG* changeTexture(const ResTIMG* img, u8 id);                                 // _110
-	virtual ResTIMG* changeTexture(const char* fileName, u8 id);                               // _114
-	virtual ResTIMG* changeTexture(const ResTIMG*, u8 id, JUTPalette* palette);                // _118
-	virtual ResTIMG* changeTexture(const char* fileName, u8 id, JUTPalette* palette);          // _11C
+	virtual const ResTIMG* changeTexture(const ResTIMG* img, u8 id);                           // _110
+	virtual const ResTIMG* changeTexture(const char* fileName, u8 id);                         // _114
+	virtual const ResTIMG* changeTexture(const ResTIMG*, u8 id, JUTPalette* palette);          // _118
+	virtual const ResTIMG* changeTexture(const char* fileName, u8 id, JUTPalette* palette);    // _11C
 	virtual JUTTexture* getTexture(u8 id) const { return (id < 4) ? mTextures[id] : nullptr; } // _120 (weak)
 	virtual u8 getTextureCount() const { return mTextureCount; }                               // _124 (weak)
 	virtual bool setBlack(JUtility::TColor black)                                              // _128 (weak)
@@ -156,7 +156,7 @@ struct J2DPicture : public J2DPane {
 	void setTexCoord(JGeometry::TVec2s* texCoord, const JUTTexture* texture, J2DBinding binding, J2DMirror mirror, bool doRotate90);
 	GXTlut getTlutID(const ResTIMG* img, u8 id);
 
-	void operator=(const J2DPicture& other)
+	J2DPicture& operator=(const J2DPicture& other)
 	{
 		J2DPane::operator=(other);
 
@@ -168,20 +168,15 @@ struct J2DPicture : public J2DPane {
 		mTextureCount     = other.mTextureCount;
 		mUsedTextureFlags = other.mUsedTextureFlags;
 
-		mTexCoords[0] = other.mTexCoords[0];
-		mTexCoords[1] = other.mTexCoords[1];
-		mTexCoords[2] = other.mTexCoords[2];
-		mTexCoords[3] = other.mTexCoords[3];
-
-		mBlendColorRatio[0] = other.mBlendColorRatio[0];
-		mBlendColorRatio[1] = other.mBlendColorRatio[1];
-		mBlendColorRatio[2] = other.mBlendColorRatio[2];
-		mBlendColorRatio[3] = other.mBlendColorRatio[3];
-
-		mBlendAlphaRatio[0] = other.mBlendAlphaRatio[0];
-		mBlendAlphaRatio[1] = other.mBlendAlphaRatio[1];
-		mBlendAlphaRatio[2] = other.mBlendAlphaRatio[2];
-		mBlendAlphaRatio[3] = other.mBlendAlphaRatio[3];
+		struct TexCoordBlock {
+			JGeometry::TVec2s coords[4];
+		};
+		struct RatioBlock {
+			f32 ratios[4];
+		};
+		*(TexCoordBlock*)mTexCoords    = *(const TexCoordBlock*)other.mTexCoords;
+		*(RatioBlock*)mBlendColorRatio = *(const RatioBlock*)other.mBlendColorRatio;
+		*(RatioBlock*)mBlendAlphaRatio = *(const RatioBlock*)other.mBlendAlphaRatio;
 
 		mPalette         = other.mPalette;
 		mWhite           = other.mWhite;
@@ -192,6 +187,7 @@ struct J2DPicture : public J2DPane {
 		mCornerColors[3] = other.mCornerColors[3];
 		mBlendColor      = other.mBlendColor;
 		mBlendAlpha      = other.mBlendAlpha;
+		return *this;
 	}
 
 	inline void setCornerColor(TCornerColor colors)
@@ -230,7 +226,7 @@ struct J2DPicture : public J2DPane {
 
 	inline ResTIMG* getTIMG(u8 i) { return getTexture(i)->mTexInfo; }
 
-	inline JGeometry::TVec2<s16>* getTexCoord(int i) { return &mTexCoords[i]; }
+	inline JGeometry::TVec2<s16>* getTexCoord(u8 i) { return &mTexCoords[i]; }
 
 	static inline void swap(f32& a, f32& b)
 	{
@@ -323,10 +319,10 @@ struct J2DPictureEx : public J2DPicture {
 	virtual void load(u8 id) { load(GXTexMapID(id), id); }                                   // _100 (weak)
 	virtual void setBlendColorRatio(f32, f32, f32, f32, f32, f32, f32, f32);                 // _108
 	virtual void setBlendAlphaRatio(f32, f32, f32, f32, f32, f32, f32, f32);                 // _10C
-	virtual ResTIMG* changeTexture(const ResTIMG* img, u8 id);                               // _110
-	virtual ResTIMG* changeTexture(const char* fileName, u8 id);                             // _114
-	virtual ResTIMG* changeTexture(const ResTIMG* img, u8 id, JUTPalette* palette);          // _118
-	virtual ResTIMG* changeTexture(const char* fileName, u8 id, JUTPalette* palette);        // _11C
+	virtual const ResTIMG* changeTexture(const ResTIMG* img, u8 id);                         // _110
+	virtual const ResTIMG* changeTexture(const char* fileName, u8 id);                       // _114
+	virtual const ResTIMG* changeTexture(const ResTIMG* img, u8 id, JUTPalette* palette);    // _118
+	virtual const ResTIMG* changeTexture(const char* fileName, u8 id, JUTPalette* palette);  // _11C
 	virtual JUTTexture* getTexture(u8 id) const;                                             // _120
 	virtual u8 getTextureCount() const;                                                      // _124
 	virtual bool setBlack(JUtility::TColor black);                                           // _128

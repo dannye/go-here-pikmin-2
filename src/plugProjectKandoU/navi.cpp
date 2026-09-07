@@ -136,7 +136,7 @@ void Navi::onInit(Game::CreatureInitArg* arg)
 
 	mCollTree->createFromFactory(mModel, naviMgr->mCollData, nullptr);
 	JUT_ASSERTLINE(838, ((int)mCollTree->mPart) >= 0x80000000,
-	               "ザン?[?[（・д・）−−ネン\n"); // 'disappointttttt D: ?? ment' (lol)
+	               "ザンーー（・д・）−−ネン\n"); // 'disappointttttt D: ?? ment' (lol)
 	mCollTree->attachModel(mModel);
 
 	mFsm->start(this, NSID_Walk, nullptr);
@@ -338,8 +338,8 @@ bool Navi::procActionButton()
 			// if sprout found, pluck it.
 			if (otherTargetSprout) {
 				NaviNukuAdjustStateArg nukuAdjustArg2;
-				setupNukuAdjustArg(otherTargetSprout, nukuAdjustArg2);
-				nukuAdjustArg2._18 = 1;
+				otherNavi->setupNukuAdjustArg(otherTargetSprout, nukuAdjustArg2);
+				nukuAdjustArg2.mIsFollowing = true;
 				otherNavi->mFsm->transit(otherNavi, NSID_NukuAdjust, &nukuAdjustArg2);
 			}
 		}
@@ -865,6 +865,7 @@ void Navi::useDope(int sprayType)
 {
 	if (gameSystem->isVersusMode()) {
 		mSprayCounts[sprayType]--;
+		return;
 	}
 
 	playData->useDope(sprayType);
@@ -2485,7 +2486,7 @@ void Navi::setDeadLaydown()
 {
 	int id = mNaviIndex;
 	if (id < 8) {
-		(&playData->mDeadNaviID)[mNaviIndex] = mNaviIndex > 0; // erm
+		playData->mDeadNaviID |= 1 << id;
 	}
 
 	Vector3f offset;
@@ -3679,9 +3680,8 @@ void Navi::enterAllPikis()
 	{
 		Piki* piki = *iterator;
 		if (piki->isAlive()) {
-			list[pikis] = piki;
+			list[pikis++] = piki;
 		}
-		pikis++;
 	}
 
 	list = buffer;
@@ -3986,7 +3986,7 @@ void Navi::holeinAllPikis(Vector3f& pos)
 				buffer[pikis] = piki;
 				pikis++;
 			} else {
-				piki->mFsm->transitForce(piki, 0, nullptr);
+				piki->mFsm->transitForce(piki, PIKISTATE_Walk, nullptr);
 				buffer[pikis] = piki;
 				pikis++;
 			}
@@ -4018,7 +4018,7 @@ void Navi::fountainonAllPikis(Vector3f& pos)
 				buffer[pikis] = piki;
 				pikis++;
 			} else {
-				piki->mFsm->transitForce(piki, 0, nullptr);
+				piki->mFsm->transitForce(piki, PIKISTATE_Walk, nullptr);
 				buffer[pikis] = piki;
 				pikis++;
 			}
@@ -4050,7 +4050,7 @@ void Navi::demowaitAllPikis()
 				buffer[pikis] = piki;
 				pikis++;
 			} else {
-				piki->mFsm->transitForce(piki, 0, nullptr);
+				piki->mFsm->transitForce(piki, PIKISTATE_Walk, nullptr);
 				buffer[pikis] = piki;
 				pikis++;
 			}
@@ -4882,7 +4882,7 @@ void Navi::makeCStick(bool disable)
 		f32 plateAngleCos  = pikmin2_cosf(plateAngle);
 		f32 plateSineAngle = pikmin2_sinf(plateAngle);
 
-		f32 angleLimit = pikmin2_cosf(120.0f * DEG2RAD);
+		f32 angleLimit = pikmin2_cosf(2.0f * PI / 3.0f);
 
 		f32 newAngle = 0.0f;
 
@@ -5857,7 +5857,7 @@ void Navi::findNextThrowPiki()
 u32 Navi::ogGetNextThrowPiki()
 {
 	Piki* nextPiki = mNextThrowPiki;
-	return (!nextPiki) ? 0 : ((3 * nextPiki->mPikiKind) + 1) + nextPiki->mHappaKind;
+	return (!nextPiki) ? 0 : ((PikiGrowthStageCount * nextPiki->mPikiKind) + 1) + nextPiki->mHappaKind;
 }
 
 // extern f32 pikmin2_cosf(f32 theta);

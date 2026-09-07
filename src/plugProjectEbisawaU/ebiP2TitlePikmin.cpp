@@ -442,7 +442,7 @@ void Pikmin::TMgr::updateCalcBoid_()
 			if (curUnit->isCalc()) {
 				Vector2f sep = unit->mPosition - curUnit->mPosition;
 				f32 dist     = sep.length();
-				if (dist < mBoidParamMgr.mCurrBoidColl) {
+				if (dist < mBoidParamMgr.mCurrBoidNeighbor) {
 					vec2 += curUnit->mAngle * curUnit->mParms[0];
 					if (dist < 1.0f) {
 						dist = 1.0f;
@@ -526,7 +526,7 @@ void Pikmin::TUnit::init(ebi::title::Pikmin::TMgr* mgr, s32 color)
 	mParms[2] = mManager->mParams.mCollRadius();
 
 	mFrameControlA.mFrame = 5.0f * randEbisawaFloat();
-	mRandAnimSpeeds.y     = 0.8f * randEbisawaFloat() + 0.40000004f;
+	mRandAnimSpeeds.y     = 0.40000004f * randEbisawaFloat() + 0.8f;
 	mIsDead               = false;
 }
 
@@ -1892,7 +1892,7 @@ void Pikmin::TUnit::updateSmoothWalk_(Vector2f& arg)
 	pos.normalise();
 	pos     = pos * _964;
 	f32 len = pos.length();
-	Vector2f newpos;
+	Vector2f newpos(pos);
 	if (len > _968) {
 		pos.normalise();
 		newpos = pos * _968;

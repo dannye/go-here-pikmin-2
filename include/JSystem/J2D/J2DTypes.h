@@ -151,10 +151,10 @@ struct J2DBlendInfo {
 	// 	mOp         = op;
 	// }
 
-	u8 mType;       // _00
-	u8 mSrcFactor;  // _01
-	u8 mDestFactor; // _02
-	u8 mOp;         // _03
+	u8 mType;       // _00 GXBlendMode
+	u8 mSrcFactor;  // _01 GXBlendFactor
+	u8 mDestFactor; // _02 GXBlendFactor
+	u8 mOp;         // _03 GXLogicOp
 };
 
 extern const J2DBlendInfo j2dDefaultBlendInfo;
@@ -191,6 +191,15 @@ struct J2DColorChanInfo {
 	u8 _01; // _01
 	u8 _02; // _02, padding?
 	u8 _03; // _03, padding?
+
+	J2DColorChanInfo& operator=(const J2DColorChanInfo& other)
+	{
+		_00 = other._00;
+		_01 = other._01;
+		_02 = other._02;
+		_03 = other._03;
+		return *this;
+	}
 };
 
 inline u8 J2DCalcColorChanID(u8 id)
@@ -294,6 +303,15 @@ struct J2DTevSwapModeInfo {
 };
 
 struct J2DTevSwapModeTableInfo {
+	inline J2DTevSwapModeTableInfo& operator=(const J2DTevSwapModeTableInfo& other)
+	{
+		mR = other.mR;
+		mG = other.mG;
+		mB = other.mB;
+		mA = other.mA;
+		return *this;
+	}
+
 	u8 mR; // _00
 	u8 mG; // _01
 	u8 mB; // _02
@@ -314,14 +332,9 @@ struct J2DTevSwapModeTable {
 
 	J2DTevSwapModeTable(const J2DTevSwapModeTableInfo& info) { _00 = J2DCalcTevSwapTable(info.mR, info.mG, info.mB, info.mA); }
 
-	void setTevSwapModeTableInfo(const J2DTevSwapModeTableInfo& info)
-	{
-		u8 r = info.mR;
-		u8 g = info.mG;
-		u8 b = info.mB;
-		u8 a = info.mA;
-		_00  = J2DCalcTevSwapTable(r, g, b, a);
-	}
+	void setTevSwapModeTableInfo(const J2DTevSwapModeTableInfo& info) { _00 = J2DCalcTevSwapTable(info.mR, info.mG, info.mB, info.mA); }
+
+	void operator=(const J2DTevSwapModeTable& other) { _00 = other._00; }
 
 	u8 getR() { return _00 >> 6 & 3; }
 	u8 getG() { return _00 >> 4 & 3; }
@@ -359,8 +372,8 @@ struct J2DTevStage {
 
 	void setStageNo(u32 param_0)
 	{
-		_00 = (param_0 << 1) - 0x40;
-		_04 = (param_0 << 1) - 0x3f;
+		_00 = (param_0 << 1) + 0xC0;
+		_04 = (param_0 << 1) + 0xC1;
 	}
 
 	void setTevSwapModeInfo(const J2DTevSwapModeInfo& swapInfo)
@@ -559,7 +572,7 @@ struct J2DTexCoord {
 	J2DTexCoord() { mTexCoordInfo = j2dDefaultTexCoordInfo[0]; }
 	// J2DTexCoordInfo _00;
 
-	J2DTexCoord(const J2DTexCoordInfo& info) { *(J2DTexCoordInfo*)this = info; }
+	J2DTexCoord(const J2DTexCoordInfo& info) { mTexCoordInfo = info; }
 
 	void setTexCoordInfo(const J2DTexCoordInfo& info) { mTexCoordInfo = info; }
 	s32 getTexGenType() { return mTexCoordInfo.mTexGenType; }

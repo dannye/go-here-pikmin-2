@@ -498,8 +498,10 @@ void PelletGoalState::exec(Pellet* pelt)
 		mTimer       = 0.0f;
 	}
 
-	Vector3f scaledSep = (mOnyon->getSuckPos() - mCurrPos);
-	Vector3f test      = mCurrPos + scaledSep * mSuckTime;
+	Vector3f suckPos = mOnyon->getSuckPos();
+	Vector3f scaledSep;
+	scaledSep.sub(suckPos, mCurrPos);
+	Vector3f test = mCurrPos + scaledSep * mSuckTime;
 	if (mIsWaiting) {
 		if ((u8)mOnyon->isSuckArriveWait()) {
 			return;
@@ -527,7 +529,7 @@ void PelletGoalState::exec(Pellet* pelt)
 	f32 scale      = suckRemain * mScale;
 
 	f32 sinTheta = sinf(8.0f * (TAU * suckRemain));
-	sinTheta *= 0.03f; // regswap here for f1 and f0
+	sinTheta     = 0.03f * sinTheta;
 	scale += sinTheta;
 	pelt->mScale = Vector3f(scale);
 
@@ -570,10 +572,10 @@ void PelletGoalState::exec(Pellet* pelt)
 				if (strcmp(pelt->mConfig->mParams.mName.mData, "key")) {
 					PSSystem::SceneMgr* mgr = PSSystem::getSceneMgr();
 					PSSystem::validateSceneMgr(mgr);
-					PSM::Scene_Cave* scene = static_cast<PSM::Scene_Cave*>(mgr->getChildScene());
+					PSM::Scene_Game* scene = static_cast<PSM::Scene_Game*>(mgr->getChildScene());
 					PSSystem::checkGameScene(scene);
 					if (scene->isCave()) {
-						scene->startPollutUpSe();
+						static_cast<PSM::Scene_Cave*>(scene)->startPollutUpSe();
 					}
 				}
 			}
@@ -1719,9 +1721,9 @@ void PelletReturnState::flick(Pellet* pelt)
 {
 	Stickers stick(pelt);
 	Iterator<Creature> it(&stick);
-	f32 dmg   = 100.0f;
+	f32 dmg   = 0.0f;
 	f32 ang   = FLICK_BACKWARD_ANGLE;
-	f32 intes = 0.0f;
+	f32 intes = 100.0f;
 	CI_LOOP(it)
 	{
 		Creature* obj = *it;
@@ -1927,7 +1929,9 @@ u32 PelletReturnState::execMove(Pellet* pelt)
 	}
 	Vector3f velocity  = sep * 200.0f;
 	Vector3f velocity2 = pelt->getVelocity();
-	velocity           = velocity2 + (velocity - velocity2) * 0.2f;
+	Vector3f velocityDelta;
+	velocityDelta.sub(velocity, velocity2);
+	velocity = velocity2 + velocityDelta * 0.2f;
 
 	Vector3f pos = pelt->getPosition();
 	f32 y        = pelt->getCylinderHeight() * 0.5f;

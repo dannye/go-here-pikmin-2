@@ -3,6 +3,18 @@
 
 #include "types.h"
 
+#ifdef ITEM_HONEY_WEAK_ORDER
+template <typename T>
+struct MonoObjectMgr;
+
+template <typename T>
+inline void instantiateDelegate1Alloc(T*)
+{
+	// this is still a huge hack but it feels like a better hack
+	(void)&MonoObjectMgr<typename T::ItemType>::alloc;
+}
+#endif
+
 struct IDelegate {
 	virtual void invoke() = 0; // _08
 };
@@ -86,7 +98,13 @@ struct Delegate1 : public IDelegate1<A> {
 	 *
 	 * @param a The argument to be passed to the member function.
 	 */
-	virtual void invoke(A a) { (mObject->*mFunction)(a); } // _08
+	virtual void invoke(A a) // _08
+	{
+#ifdef ITEM_HONEY_WEAK_ORDER
+		instantiateDelegate1Alloc(mObject);
+#endif
+		(mObject->*mFunction)(a);
+	}
 
 	// VTBL _00
 	T* mObject;              // _04

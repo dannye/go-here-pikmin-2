@@ -104,12 +104,7 @@ Rappa::Rappa()
  */
 void Rappa::init(u16 id)
 {
-	bool check = true;
-	// something dumb along these lines
-	if (bool(id == -1)) {
-		check = false;
-	}
-	P2ASSERTLINE(180, check);
+	P2ASSERTLINE(180, id < 2);
 
 	u32 val    = -(id == 0);
 	mId        = val + 14;
