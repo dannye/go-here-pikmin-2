@@ -1456,6 +1456,12 @@ void BaseGameSection::directDraw(Graphics& gfx, Viewport* vp)
 	vp->setProjection();
 	gfx.initPrimDraw(vp->getMatrix(true));
 	doDirectDraw(gfx, vp);
+	if (naviMgr) {
+		Navi* player = naviMgr->getActiveNavi();
+		if (player) {
+			player->doDirectDraw(gfx);
+		}
+	}
 	if (TexCaster::Mgr::sInstance) {
 		gfx.initPrimDraw(vp->getMatrix(true));
 		mLightMgr->mFogMgr->set(gfx);

@@ -27,6 +27,8 @@
 #include "utilityU.h"
 #include "JSystem/JUtility/JUTGamePad.h"
 
+#include "Drought/Game/NaviGoHere.h"
+
 int unusedNaviStateArray[] = { 1, 2, 3, 0 }; // ?
 
 static const int unusedNaviStateArray2[] = { 0, 0, 0 };
@@ -168,6 +170,9 @@ void NaviFSM::init(Navi* navi)
 	registerState(new NaviCarryBombState);
 	registerState(new NaviClimbState);
 	registerState(new NaviPathMoveState);
+
+	// CUSTOM STATES
+	registerState(new NaviGoHereState);
 }
 
 /**

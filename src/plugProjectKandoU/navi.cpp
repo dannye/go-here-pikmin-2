@@ -30,6 +30,10 @@
 #include "utilityU.h"
 #include "PowerPC_EABI_Support/MSL_C/MSL_Common/arith.h"
 
+#include "Drought/Game/NaviGoHere.h"
+
+#define GO_HERE_NAVI_DEBUG (false)
+
 static const u32 fillerbytes[3] = { 0, 0, 0 };
 int numSearch;
 
@@ -1807,6 +1811,10 @@ void Navi::updateCursor()
  */
 void Navi::doSimulation(f32 timeStep)
 {
+	if (gameSystem->mIsFrozen && getStateID() == NSID_GoHere) {
+		return;
+	}
+
 	if (moviePlayer->isFlag(MVP_IsActive)) {
 		mVelocity       = Vector3f(0.0f);
 		mTargetVelocity = Vector3f(0.0f);
@@ -2760,8 +2768,22 @@ f32 Navi::getMapCollisionRadius()
  * @note Address: 0x80143AF4
  * @note Size: 0x4
  */
-void Navi::doDirectDraw(Graphics&)
+void Navi::doDirectDraw(Graphics& gfx)
 {
+#if GO_HERE_NAVI_DEBUG
+	if (getStateID() != NSID_GoHere) {
+		return;
+	}
+
+	Game::NaviGoHereState* state = (Game::NaviGoHereState*)getCurrState();
+
+	PerspPrintfInfo info;
+	Vector3f pos(mPosition.x, 15.0f + mPosition.y, mPosition.z);
+
+	info.mColorA = Color4(0xC8, 0xC8, 0xFF, 0xC8);
+	info.mColorB = Color4(0x64, 0x64, 0xFF, 0xC8);
+	gfx.perspPrintf(info, pos, "[%d/%d] t[%1.1f]", state->mActiveRouteNodeIndex, state->mPath.mLength, state->mTimeoutTimer);
+#endif
 }
 
 // /**

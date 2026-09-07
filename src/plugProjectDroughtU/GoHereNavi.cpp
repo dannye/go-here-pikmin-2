@@ -10,8 +10,6 @@
 #include "Game/GameLight.h"
 #include "Game/CPlate.h"
 
-#define GO_HERE_NAVI_DEBUG (false)
-
 namespace Game {
 
 bool AreAllPikisBlue(Navi* navi)
@@ -25,62 +23,6 @@ bool AreAllPikisBlue(Navi* navi)
 		}
 	}
 	return true;
-}
-
-void BaseGameSection::directDraw(Graphics& gfx, Viewport* vp)
-{
-	vp->setViewport();
-	vp->setProjection();
-	gfx.initPrimDraw(vp->getMatrix(true));
-	doDirectDraw(gfx, vp);
-	if (naviMgr) {
-		Navi* player = naviMgr->getActiveNavi();
-		if (player) {
-			player->doDirectDraw(gfx);
-		}
-	}
-	if (TexCaster::Mgr::sInstance) {
-		gfx.initPrimDraw(vp->getMatrix(true));
-		mLightMgr->mFogMgr->set(gfx);
-		TexCaster::Mgr::sInstance->draw(gfx);
-	}
-}
-
-void NaviFSM::init(Navi* navi)
-{
-	mBackupStateID = NSID_NULL;
-	create(NSID_StateCount);
-
-	registerState(new NaviWalkState);
-	registerState(new NaviFollowState);
-	registerState(new NaviPunchState);
-	registerState(new NaviChangeState);
-	registerState(new NaviGatherState);
-	registerState(new NaviThrowState);
-	registerState(new NaviThrowWaitState);
-	registerState(new NaviDopeState);
-	registerState(new NaviNukuState);
-	registerState(new NaviNukuAdjustState);
-	registerState(new NaviContainerState);
-	registerState(new NaviAbsorbState);
-	registerState(new NaviFlickState);
-	registerState(new NaviDamagedState);
-	registerState(new NaviPressedState);
-	registerState(new NaviFallMeckState);
-	registerState(new NaviKokeDamageState);
-	registerState(new NaviSaraiState);
-	registerState(new NaviSaraiExitState);
-	registerState(new NaviDeadState);
-	registerState(new NaviStuckState);
-	registerState(new NaviDemo_UfoState);
-	registerState(new NaviDemo_HoleInState);
-	registerState(new NaviPelletState);
-	registerState(new NaviCarryBombState);
-	registerState(new NaviClimbState);
-	registerState(new NaviPathMoveState);
-
-	// CUSTOM STATES
-	registerState(new NaviGoHereState);
 }
 
 void NaviGoHereState::init(Navi* player, StateArg* arg)
@@ -419,39 +361,6 @@ void NaviGoHereState::changeState(Navi* player, bool isWanted)
 	PSSystem::spSysIF->playSystemSe(isWanted ? PSSE_SY_PLAYER_CHANGE : PSSE_PL_ORIMA_DAMAGE, 0);
 }
 
-
-void Navi::doSimulation(f32 timeStep)
-{
-	if (gameSystem->mIsFrozen && getStateID() == NSID_GoHere) {
-		return;
-	}
-
-	if (moviePlayer->isFlag(MVP_IsActive)) {
-		mVelocity       = Vector3f(0.0f);
-		mTargetVelocity = Vector3f(0.0f);
-		mAcceleration   = Vector3f(0.0f);
-	}
-
-	FakePiki::doSimulation(timeStep);
-}
-
-void Navi::doDirectDraw(Graphics& gfx)
-{
-#if GO_HERE_NAVI_DEBUG
-	if (getStateID() != NSID_GoHere) {
-		return;
-	}
-
-	Game::NaviGoHereState* state = (Game::NaviGoHereState*)getCurrState();
-
-	PerspPrintfInfo info;
-	Vector3f pos(mPosition.x, 15.0f + mPosition.y, mPosition.z);
-
-	info.mColorA = Color4(0xC8, 0xC8, 0xFF, 0xC8);
-	info.mColorB = Color4(0x64, 0x64, 0xFF, 0xC8);
-	gfx.perspPrintf(info, pos, "[%d/%d] t[%1.1f]", state->mActiveRouteNodeIndex, state->mPath.mLength, state->mTimeoutTimer);
-#endif
-}
 
 bool Navi::canSwap()
 {
