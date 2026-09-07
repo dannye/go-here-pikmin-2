@@ -42,30 +42,6 @@ void NaviGoHereState::init(Navi* player, StateArg* arg)
 	mTimeoutTimer         = 0.0f;
 }
 
-// usually inlined, plays the navi's voice line when swapped
-inline void NaviState::playChangeVoice(Navi* player)
-{
-	if (player->mNaviIndex == NAVIID_Olimar) { // OLIMAR
-		PSSystem::spSysIF->playSystemSe(PSSE_SY_CHANGE_ORIMA, 0);
-
-	} else if (playData->isStoryFlag(STORY_DebtPaid)) { // PRESIDENT
-		PSSystem::spSysIF->playSystemSe(PSSE_SY_CHANGE_SHACHO, 0);
-
-	} else { // LOUIE
-		PSSystem::spSysIF->playSystemSe(PSSE_SY_CHANGE_LUI, 0);
-	}
-
-	if (player->mNaviIndex == NAVIID_Olimar) { // OLIMAR
-		player->mSoundObj->startSound(PSSE_PL_PIKON_ORIMA, 0);
-
-	} else if (playData->isStoryFlag(STORY_DebtPaid)) { // PRESIDENT
-		player->mSoundObj->startSound(PSSE_PL_PIKON_SHACHO, 0);
-
-	} else { // LOUIE
-		player->mSoundObj->startSound(PSSE_PL_PIKON_LUI, 0);
-	}
-}
-
 void NaviGoHereState::exec(Navi* player)
 {
 	// Handle early exit conditions (dead, frozen, etc)
