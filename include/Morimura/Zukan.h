@@ -100,10 +100,10 @@ struct DispMemberZukanItem : public DispMemberZukanBase {
 struct TDEnemyScene : public THIOScene {
 	TDEnemyScene();
 
+	virtual const char* getResName() const { return "res_enemyZukan.szs"; } // _1C (weak)
 	virtual SceneType getSceneType() { return SCENE_ZUKAN_ENEMY; }          // _08 (weak)
 	virtual ScreenOwnerID getOwnerID() { return OWNER_MRMR; }               // _0C (weak)
 	virtual ScreenMemberID getMemberID() { return MEMBER_ZUKAN_ENEMY; }     // _10 (weak)
-	virtual const char* getResName() const { return "res_enemyZukan.szs"; } // _1C (weak)
 	virtual void doCreateObj(JKRArchive*);                                  // _20
 	virtual bool doStart(Screen::StartSceneArg*);                           // _3C
 
@@ -118,10 +118,10 @@ struct TDEnemyScene : public THIOScene {
 struct TDItemScene : public THIOScene {
 	TDItemScene();
 
+	virtual const char* getResName() const { return "res_itemZukan.szs"; }; // _1C (weak)
 	virtual SceneType getSceneType() { return SCENE_ZUKAN_ITEM; }           // _08 (weak)
 	virtual ScreenOwnerID getOwnerID() { return OWNER_MRMR; }               // _0C (weak)
 	virtual ScreenMemberID getMemberID() { return MEMBER_ZUKAN_ITEM; }      // _10 (weak)
-	virtual const char* getResName() const { return "res_itemZukan.szs"; }; // _1C (weak)
 	virtual void doCreateObj(JKRArchive*);                                  // _20
 	virtual bool doStart(Screen::StartSceneArg*);                           // _3C
 
@@ -295,20 +295,6 @@ struct TZukanBase : public TScrollList {
 			mRollSpeedMod        = 1.1f;
 			mSpeedSpeedupFactor  = 1.5f;
 			mInitialRollSpeed    = 2.0f;
-
-			mNewOffset.set(0.0f, -12.5f);
-			mLargeNewOffset.set(0.0f, -30.0f);
-
-			mNewColor0.set(255, 96, 80, 0);
-			mNewColor1.set(225, 0, 0, 255);
-
-			mCategoryScale.x = 1.3f;
-			mCategoryScale.y = 1.15f;
-
-			mCategoryColor0w.set(0, 0, 255, 255);
-			mCategoryColor0b.set(255, 255, 255, 0);
-			mCategoryColor1w.set(255, 255, 255, 255);
-			mCategoryColor1b.set(255, 255, 255, 0);
 		}
 
 		f32 mMaxRollSpeed;        // _00

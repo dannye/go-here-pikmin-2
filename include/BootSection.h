@@ -101,7 +101,7 @@ struct BootSection : public Game::BaseHIOSection {
 	void changeRenderModeProgressive();
 	void waitLoadGameOption();
 	void waitSystemDvdLoad();
-	void getModeEpilepsy();
+	StateID getModeEpilepsy();
 
 	inline int getFadeSpeed() { return ROUND_F32_TO_U8(0.5f / sys->getDeltaTime()); }
 
@@ -122,6 +122,6 @@ struct BootSection : public Game::BaseHIOSection {
 	f32 mLogoShakeStrength;                 // _E4
 };
 
-static BootSection* sBootSection;
+extern BootSection* sBootSection;
 
 #endif

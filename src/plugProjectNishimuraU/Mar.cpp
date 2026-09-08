@@ -434,7 +434,7 @@ Piki* Obj::getSearchedPikmin()
 	{
 		Piki* piki = *iPiki;
 		if (piki->isAlive() && piki->isPikmin() && piki->mFloorTriangle && !piki->isStickToMouth() && piki->mSticker != this) {
-			f32 sightDiff = getCreatureViewAngle(piki);
+			f32 sightDiff = getAngDist(piki);
 			if (FABS(sightDiff) <= FOV) {
 				Vector3f pikiPos2 = piki->getPosition();
 				if (sqrDistanceXZ(mPosition, pikiPos2) < sqrSight) {
@@ -459,8 +459,8 @@ bool Obj::isTargetLost()
 			viewAngle = 180.0f;
 		}
 
-		return isTargetWithinRange(target, getCreatureViewAngle(target), C_GENERALPARMS.mPrivateRadius(), C_GENERALPARMS.mSightRadius(),
-		                           12800.0f, viewAngle);
+		return isTargetOutOfRange(target, getAngDist(target), C_GENERALPARMS.mPrivateRadius(), C_GENERALPARMS.mSightRadius(), 12800.0f,
+		                          viewAngle);
 	}
 
 	return true;
@@ -1034,7 +1034,7 @@ void Obj::windTarget()
 		if (navi->isAlive()) {
 			Vector3f naviPosition     = navi->getPosition();
 			Vector3f separationVector = naviPosition - attackStartPosition;
-			f32 dotProduct            = separationVector.dot(attackDirection);
+			f32 dotProduct            = attackDirection.dot(separationVector);
 
 			if (dotProduct < radius && dotProduct > 0.0f) {
 				f32 attackRadius = dotProduct * slope;
@@ -1061,7 +1061,7 @@ void Obj::windTarget()
 		if (piki->isAlive() && piki->isPikmin()) {
 			Vector3f pikiPosition     = piki->getPosition();
 			Vector3f separationVector = pikiPosition - attackStartPosition;
-			f32 dotProduct            = separationVector.dot(attackDirection);
+			f32 dotProduct            = attackDirection.dot(separationVector);
 
 			if (dotProduct < radius && dotProduct > 0.0f) {
 				f32 attackRadius = dotProduct * slope;

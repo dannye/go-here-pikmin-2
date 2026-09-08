@@ -866,7 +866,7 @@ void StateFlick::exec(EnemyBase* enemy)
 
 		case KEYEVENT_3:
 			f32 yMax         = 25.0f + OBJ(enemy)->mFootPosition.y;                                     // f31
-			f32 yMin         = OBJ(enemy)->mFootPosition.y - 30.0f;                                     // f30
+			f32 yMin         = yMax - 30.0f;                                     // f30
 			Vector3f footPos = OBJ(enemy)->mFootPosition;                                               // f28, na, f27
 			f32 trampleRange = SQUARE(CG_PROPERPARMS(enemy).mTramplingRange() * enemy->mScaleModifier); // f29
 
@@ -1632,7 +1632,7 @@ void StateWarCry::exec(EnemyBase* enemy)
 					if (yMax > pikiPos.y && yMin < pikiPos.y) {
 						roarAngle      = CG_PROPERPARMS(enemy).mRoarEffectiveAngleDeg();
 						roarDist       = CG_PROPERPARMS(enemy).mRoarEffectiveRange();
-						f32 angDist    = enemy->getCreatureViewAngle(piki);
+						f32 angDist    = enemy->getAngDist(piki);
 						bool distCheck = false;
 						Vector3f sep   = enemy->getTargetSeparation(piki);
 						if ((sep.sqrMagnitude() < SQUARE(roarDist)) && FABS(angDist) <= PI * (DEG2RAD * roarAngle)) {

@@ -125,7 +125,7 @@ void Obj::doAnimationCullingOff()
 
 	PSMTXCopy(mBaseTrMatrix.mMatrix.mtxView, mModel->mJ3dModel->mPosMtx);
 
-	if (C_PARMS->mDoUseModelFetch && getCurrAnimIndex() == 2) {
+	if (C_PARMS->mDoUseModelFetch && getCurrAnimIndex() == TAMAGOANIM_Move) {
 		J3DModel* model = mModel->getJ3DModel();
 		C_MGR->fetch(model, getMotionFrame());
 
@@ -451,7 +451,7 @@ void Obj::setGoalDirect(Vector3f& pos)
 bool Obj::turnFunc()
 {
 	f32 angle
-	    = turnToTarget2(mGoalPosition, mRandomTurnFactor * C_GENERALPARMS.mTurnSpeed(), mRandomTurnFactor * C_GENERALPARMS.mMaxTurnAngle());
+	    = turnToTarget(mGoalPosition, mRandomTurnFactor * C_GENERALPARMS.mTurnSpeed(), mRandomTurnFactor * C_GENERALPARMS.mMaxTurnAngle());
 	if (absF(angle) < 0.1f) {
 		return true;
 	}

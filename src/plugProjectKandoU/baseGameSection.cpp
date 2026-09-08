@@ -522,7 +522,7 @@ void BaseGameSection::initJ3D()
 	j3dSys.setDrawBuffer(mOpaqueDrawBuffer->get(DB_NormalLayer)->mBuffer, J3DSys::SYSDRAW_Opa);
 	j3dSys.setDrawBuffer(mTransparentDrawBuffer->get(DB_NormalLayer)->mBuffer, J3DSys::SYSDRAW_Xlu);
 
-	System::FragmentationChecker frag("poyol", false);
+	System::FragmentationChecker frag("poyo1", false);
 }
 
 /**
@@ -762,7 +762,7 @@ void BaseGameSection::initGenerators()
 						currentLoopMgr->mUnusedFlag  = true; // is nonrepeating?
 
 						currentLoopMgr->read(loopTxt, false);
-						currentLoopMgr->setDayLimit(floorDay + currentGen->mMaximumDay - 30);
+						currentLoopMgr->setDayLimit(floorDay + currentGen->mDayLimit - 30);
 						currentLoopMgr->updateUseList();
 
 						generatorManagers[fileIdx] = currentLoopMgr;
@@ -871,7 +871,7 @@ void BaseGameSection::initGenerators()
 				mapMgr->getStartPosition(position, 0);
 				position.y = mapMgr->getMinY(position) + 8.5f;
 				position.x += 18.082f;
-				position.z += -11.428f;
+				position.z += -11.482f;
 			} else {
 				Matrixf* demoMtx = mapMgr->getDemoMatrix();
 				Vector3f vec_0x1c78;
@@ -1456,6 +1456,12 @@ void BaseGameSection::directDraw(Graphics& gfx, Viewport* vp)
 	vp->setProjection();
 	gfx.initPrimDraw(vp->getMatrix(true));
 	doDirectDraw(gfx, vp);
+	if (naviMgr) {
+		Navi* player = naviMgr->getActiveNavi();
+		if (player) {
+			player->doDirectDraw(gfx);
+		}
+	}
 	if (TexCaster::Mgr::sInstance) {
 		gfx.initPrimDraw(vp->getMatrix(true));
 		mLightMgr->mFogMgr->set(gfx);
@@ -2007,12 +2013,12 @@ void BaseGameSection::setupFixMemory_dvdload()
 
 	sys->heapStatusStart("particle", nullptr);
 	ParticleMgr::globalInstance();
-	particleMgr->createHeap(0x180000);
+	particleMgr->createHeap(PARTICLE_MGR_HEAP_SIZE);
 	particleMgr->createMgr("user/Ebisawa/effect/game.jpc", 2000, 300, 0x80);
 	addGenNode(particleMgr);
 
 	TParticle2dMgr::globalInstance();
-	particle2dMgr->createHeap(256000);
+	particle2dMgr->createHeap(PARTICLE_MGR2D_HEAP_SIZE);
 	particle2dMgr->createMgr("user/Ebisawa/effect/eff2d_game2d.jpc", 0x1d4, 0x28, 0x80);
 	addGenNode(particle2dMgr);
 
@@ -2222,14 +2228,14 @@ void BaseGameSection::setupFloatMemory()
 
 		sys->heapStatusStart("CellMgr", nullptr);
 
-		BoundBox2d bounds(FLOAT_DIST_MAX, FLOAT_DIST_MAX, FLOAT_DIST_MIN, FLOAT_DIST_MIN);
+		BoundBox2d bounds(12800000.0f, 12800000.0f, -12800000.0f, -12800000.0f);
 		mapMgr->getBoundBox2d(bounds);
 		sys->heapStatusStart("PlatCellMgr", nullptr);
 		platCellMgr = new CellPyramid;
 		platCellMgr->create(bounds, 128.0f);
 		sys->heapStatusEnd("PlatCellMgr");
 
-		BoundBox2d bounds2(FLOAT_DIST_MAX, FLOAT_DIST_MAX, FLOAT_DIST_MIN, FLOAT_DIST_MIN);
+		BoundBox2d bounds2(12800000.0f, 12800000.0f, -12800000.0f, -12800000.0f);
 		mapMgr->getBoundBox2d(bounds2);
 		sys->heapStatusStart("MapRoomCellMgr", nullptr);
 		mapRoomCellMgr = new CellPyramid;
@@ -2266,7 +2272,7 @@ void BaseGameSection::setupFloatMemory()
 
 	sys->heapStatusStart("CellMgr", nullptr);
 	cellMgr = new CellPyramid;
-	BoundBox2d bounds(FLOAT_DIST_MAX, FLOAT_DIST_MAX, FLOAT_DIST_MIN, FLOAT_DIST_MIN);
+	BoundBox2d bounds(12800000.0f, 12800000.0f, -12800000.0f, -12800000.0f);
 	mapMgr->getBoundBox2d(bounds);
 	JKRGetCurrentHeap()->getFreeSize();
 	cellMgr->create(bounds, 108.0f);

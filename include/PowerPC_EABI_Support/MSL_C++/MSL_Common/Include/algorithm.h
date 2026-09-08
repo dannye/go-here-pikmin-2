@@ -2,19 +2,19 @@
 #define MSL_ALGORITHM_H_
 
 #include "mem.h"
+#include "stl/iterator.h"
 
 namespace std {
 template <class ForwardIterator, class T>
 ForwardIterator lower_bound(ForwardIterator first, ForwardIterator last, const T& val)
 {
-	int count = last - first; // probably needs to be std::distance or w/e but im not gonna be the one to implement it
-	ForwardIterator it;
-	u32 step;
+	iterator_traits<ForwardIterator>::difference_type count = std::distance<ForwardIterator>(first, last);
 
 	while (count > 0) {
-		it   = first;
-		step = count / 2;
-		it += step;
+		ForwardIterator it                                     = first;
+		iterator_traits<ForwardIterator>::difference_type step = count / 2;
+		std::advance(it, step);
+
 		if (*it < val) {
 			first = ++it;
 			count -= step + 1;
@@ -22,39 +22,33 @@ ForwardIterator lower_bound(ForwardIterator first, ForwardIterator last, const T
 			count = step;
 		}
 	}
+
+	return first;
 }
 
-template <class ForwardIterator, class T>
-ForwardIterator upper_bound(ForwardIterator first, ForwardIterator last, const T& val);
+template <class ForwardIterator, class T, class Predicate>
+ForwardIterator upper_bound(ForwardIterator first, ForwardIterator last, const T& val, Predicate p)
+{
+	iterator_traits<ForwardIterator>::difference_type count = std::distance<ForwardIterator>(first, last);
+
+	while (count > 0) {
+		ForwardIterator it                                     = first;
+		iterator_traits<ForwardIterator>::difference_type step = count / 2;
+		std::advance(it, step);
+
+		if (!(val < *it)) {
+			first = ++it;
+			count -= step + 1;
+		} else {
+			count = step;
+		}
+	}
+
+	return first;
+}
 
 template <class InputIt, class UnaryPredicate>
 InputIt find_if(InputIt first, InputIt last, UnaryPredicate p);
-
-/*
-template<class OutputIt, class Size, int A2>
-struct __fill_n {
-    OutputIt fill_n(OutputIt first, Size count, const unsigned long& value);
-};
-
-template<>
-unsigned long* __fill_n<unsigned long, long, 0>::fill_n(unsigned long* first, long count, const unsigned long& value) {
-    for (; count > 0; count--) {
-        *first++ = value;
-    }
-    return first;
-}
-
-template<class OutputIt, class Size, class T>
-OutputIt fill_n(OutputIt first, Size count, const T& value) {
-    return __fill_n::fill_n(first, count, value);
-}
-
-
-template<class ForwardIt, class T>
-void __fill(ForwardIt first, ForwardIt last, const T& value, std::random_access_iterator_tag param_3) {
-    fill_n(first, last - first, value);
-}
-*/
 
 template <class ForwardIt, class T>
 void fill(ForwardIt first, ForwardIt last, const T& value)

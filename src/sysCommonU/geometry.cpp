@@ -780,10 +780,71 @@ f32 Sys::Triangle::calcDist(Plane& plane, Sys::VertexTable& vertTable)
  * @note Address: N/A
  * @note Size: 0x1EC
  */
-// bool Triangle::intersect(Sys::VertexTable&, BoundBox2d&)
-// {
-// 	// UNUSED FUNCTION
-// }
+bool Triangle::intersect(Sys::VertexTable& verts, BoundBox2d& bounds)
+{
+	f32 triMinX = 12800000.0f;
+	f32 triMinZ = 12800000.0f;
+	f32 triMaxX = -12800000.0f;
+	f32 triMaxZ = -12800000.0f;
+
+	f32 x = verts.mObjects[mVertices[0]].x;
+	f32 z = verts.mObjects[mVertices[0]].z;
+	if (triMinX > x)
+		triMinX = x;
+	if (triMinZ > z)
+		triMinZ = z;
+	if (triMaxX < x)
+		triMaxX = x;
+	if (triMaxZ < z)
+		triMaxZ = z;
+
+	x = verts.mObjects[mVertices[1]].x;
+	z = verts.mObjects[mVertices[1]].z;
+	if (triMinX > x)
+		triMinX = x;
+	if (triMinZ > z)
+		triMinZ = z;
+	if (triMaxX < x)
+		triMaxX = x;
+	if (triMaxZ < z)
+		triMaxZ = z;
+
+	x = verts.mObjects[mVertices[2]].x;
+	z = verts.mObjects[mVertices[2]].z;
+	if (triMinX > x)
+		triMinX = x;
+	if (triMinZ > z)
+		triMinZ = z;
+	if (triMaxX < x)
+		triMaxX = x;
+	if (triMaxZ < z)
+		triMaxZ = z;
+
+	bool overlapsX;
+	if (bounds.mMax.x < triMinX) {
+		overlapsX = false;
+	} else if (triMaxX < bounds.mMin.x) {
+		overlapsX = false;
+	} else if (bounds.mMin.x <= triMinX && triMinX <= bounds.mMax.x) {
+		overlapsX = true;
+	} else if (triMinX <= bounds.mMin.x && bounds.mMin.x <= triMaxX) {
+		overlapsX = true;
+	} else {
+		overlapsX = false;
+	}
+	if (!overlapsX)
+		return false;
+
+	if (bounds.mMax.y < triMinZ)
+		return false;
+	if (triMaxZ < bounds.mMin.y)
+		return false;
+	if (bounds.mMin.y <= triMinZ && triMinZ <= bounds.mMax.y)
+		return true;
+	if (triMinZ <= bounds.mMin.y && bounds.mMin.y <= triMaxZ)
+		return true;
+	return false;
+}
 
 /**
  * @note Address: N/A
@@ -2029,6 +2090,7 @@ void GridDivider::createTriangles(Sys::CreateTriangleArg& triArg)
 	triArg.mCount    = 0;
 	triArg.mVertices = nullptr;
 
+	Triangle* trianglesBuffer[128];
 	Vector3f verticesBuffer[128 * 3]; // Max 128 triangles, 3 vertices each
 	int triangleCount = 0;
 
@@ -2044,7 +2106,6 @@ void GridDivider::createTriangles(Sys::CreateTriangleArg& triArg)
 	if (indicesInBounds) {
 		Triangle* currentTriangle;
 		TriIndexList& triIndexList = mTriIndexLists[gridZIndex + (gridXIndex * mMaxZ)];
-		Triangle* firstTriangle    = mTriangleTable->getTriangle(0);
 
 		for (int i = 0; i < triIndexList.getNum(); ++i) {
 			currentTriangle  = mTriangleTable->getTriangle(triIndexList.mObjects[i]);
@@ -2055,7 +2116,7 @@ void GridDivider::createTriangles(Sys::CreateTriangleArg& triArg)
 			// Check if the triangle is already processed
 			bool isDuplicate = false;
 			for (int j = 0; j < triangleCount; ++j) {
-				if (currentTriangle == (firstTriangle + j * 4)) {
+				if (currentTriangle == trianglesBuffer[j]) {
 					isDuplicate = true;
 					break;
 				}
@@ -2073,7 +2134,7 @@ void GridDivider::createTriangles(Sys::CreateTriangleArg& triArg)
 					verticesBuffer[triangleCount * 3 + 1] = vertexB + offsetVector;
 					verticesBuffer[triangleCount * 3 + 2] = vertexC + offsetVector;
 
-					firstTriangle[triangleCount * 4] = *currentTriangle; // Copy current triangle
+					trianglesBuffer[triangleCount] = currentTriangle;
 					++triangleCount;
 				}
 			}
@@ -2414,8 +2475,8 @@ f32 GridDivider::getMinY(Vector3f& inputPoint)
 		}
 
 		// Calculate potential Y value based on the plane equation
-		float potentialY = (triangle->mTrianglePlane.mOffset - (triangle->mTrianglePlane.mNormal.x * inputX)
-		                    - (triangle->mTrianglePlane.mNormal.z * inputZ))
+		float potentialY = (triangle->mTrianglePlane.mOffset
+		                    - (triangle->mTrianglePlane.mNormal.x * inputX + triangle->mTrianglePlane.mNormal.z * inputZ))
 		                 / normalY;
 
 		// Check if the point is inside the triangle
@@ -3087,6 +3148,13 @@ lbl_80418BC8:
  */
 void GridDivider::create(BoundBox& box, int countX, int countZ, Sys::VertexTable* vertTable, Sys::TriangleTable* triTable)
 {
+	int usedTris[1024];
+
+	mVertexTable   = vertTable;
+	mTriangleTable = triTable;
+	mMaxX          = countX;
+	mMaxZ          = countZ;
+
 	int arrayDims  = countX * countZ;
 	mTriIndexLists = new TriIndexList[arrayDims];
 
@@ -3095,7 +3163,31 @@ void GridDivider::create(BoundBox& box, int countX, int countZ, Sys::VertexTable
 	mScaleZ      = FABS(box.mMax.z - box.mMin.z) / countZ;
 
 	for (int i = 0; i < countX; i++) {
-		for (int j = 0; j < countZ; j++) { }
+		for (int j = 0; j < countZ; j++) {
+			int useCount = 0;
+			BoundBox2d bounds;
+			bounds.mMin.x = mBoundingBox.mMin.x + i * mScaleX;
+			bounds.mMax.x = bounds.mMin.x + mScaleX;
+
+			bounds.mMin.y = mBoundingBox.mMin.z + j * mScaleZ;
+			bounds.mMax.y = bounds.mMin.y + mScaleZ;
+
+			for (int k = 0; k < mTriangleTable->mCount; k++) {
+				Triangle* tri = &mTriangleTable->mObjects[k];
+
+				if (tri->intersect(*mVertexTable, bounds) && useCount < 1024) {
+					usedTris[useCount++] = k;
+				}
+			}
+
+			TriIndexList* tri = &mTriIndexLists[j + i * mMaxZ];
+			if (useCount > 0) {
+				tri->alloc(useCount);
+				for (int k = 0; k < useCount; k++) {
+					tri->addOne(usedTris[k]);
+				}
+			}
+		}
 	}
 	/*
 	.loc_0x0:
@@ -3455,8 +3547,10 @@ void GridDivider::create(BoundBox& box, int countX, int countZ, Sys::VertexTable
  * @note Address: N/A
  * @note Size: 0x6C
  */
-void GridDivider::write(Stream&)
+void GridDivider::write(Stream& stream)
 {
+	mVertexTable->write(stream);
+	mTriangleTable->write(stream);
 	// UNUSED FUNCTION
 }
 
@@ -3464,7 +3558,7 @@ void GridDivider::write(Stream&)
  * @note Address: N/A
  * @note Size: 0xC0
  */
-void GridInfo::write(Stream&)
+void GridInfo::write(Stream& stream)
 {
 	// UNUSED FUNCTION
 }
@@ -3546,7 +3640,8 @@ void TriIndexList::getMinMax(VertexTable& vertTable, TriangleTable& triTable, Ve
 		};
 
 		for (int j = 0; j < 3; j++) {
-			f32 testVal = vec1.dot(vertices[j] - vec2);
+			Vector3f relative = vertices[j] - vec2;
+			f32 testVal       = relative.x * vec1.x + relative.y * vec1.y + relative.z * vec1.z;
 
 			if (testVal > max) {
 				max = testVal;

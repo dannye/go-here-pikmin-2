@@ -25,26 +25,24 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 	TFunctionValueAttributeSet set = mBaseFV->getAttributeSet();
 	const void* pNext              = block.getNext();
 	const void* pData              = block.getContent();
+
 	while (pData < pNext) {
 		data::TParse_TParagraph para(pData);
 		data::TParse_TParagraph::TData dat;
 		para.getData(&dat);
-		u32 u32Type                              = dat.mType;
-		u32 u32Size                              = dat.mSize;
-		const void* pContent                     = dat.mContent;
-		TFunctionValueAttribute_range* pfvaRange = set.range_get();
-		TFunctionValueAttribute_refer* referGet;
-		TFunctionValueAttribute_interpolate* pfvaInterpolate = set.interpolate_get();
+		u32 u32Type          = dat.mType;
+		u32 u32Size          = dat.mSize;
+		const void* pContent = dat.mContent;
 
 		switch (u32Type) {
 		case 0:
-			// mFVConstant->prepare();
-			// return;
+			// I hate this goto, but I don't see what else could cause this jump in the table??
+			goto end;
 		case 1: {
 			prepare_data_(dat, control);
 		} break;
 		case 0x10: {
-			referGet = set.refer_get();
+			TFunctionValueAttribute_refer* referGet = set.refer_get();
 
 			if (!referGet) {
 				break;
@@ -52,35 +50,19 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 
 			JGadget::TVector_pointer<TFunctionValue*>& rCnt = referGet->refer_referContainer();
 
-			typedef struct {
-				u32 length;
-				const u8 data[0];
-			} unkDataHeader;
-
-			typedef struct {
-				u32 count;
-				unkDataHeader dataArray[0];
-			} unkDataArray;
-
-			const unkDataArray* i  = static_cast<const unkDataArray*>(pContent);
-			u32 dataCount          = i->count;
-			const unkDataHeader* d = i->dataArray;
-
-			for (; dataCount != 0; dataCount--) {
-				u32 length = d->length;
-
-				TObject* pObject = control->getObject(&d->data, length);
-
+			u32* content = (u32*)pContent;
+			u32 i        = content[0];
+			u32* ptr     = content + 1;
+			for (; i != 0; ptr++, i--) {
+				u32 size         = *ptr;
+				TObject* pObject = control->getObject(ptr + 1, size);
 				if (pObject) {
-					rCnt.push_back(&pObject->referFunctionValue());
+					TFunctionValue& rfv = *pObject->referFunctionValue();
+					rCnt.push_back(&rfv);
 				}
-
-#ifdef __MWERKS__ // clang-format off
-                (const u8*)d += align_roundUp(length, sizeof(u32)) + sizeof(u32);
-				#else
-                d = (const unkDataHeader*)(((const u8*)d) + align_roundUp(length, sizeof(u32)) + sizeof(u32));
-				#endif // clang-format on
+				ptr += align_roundUp(size, 4) >> 2;
 			}
+
 		} break;
 		case 0x11: {
 			TFunctionValueAttribute_refer* pfvaRefer = set.refer_get();
@@ -90,19 +72,22 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 			}
 
 			JGadget::TVector_pointer<TFunctionValue*>& rCnt = pfvaRefer->refer_referContainer();
-
-			const u32* i = static_cast<const u32*>(pContent);
-			u32 ii       = *i;
-
-			for (; i++, ii != 0; ii--) {
-				u32 length       = *i;
-				TObject* pObject = control->getObject_index(length);
+			u32* content                                    = (u32*)pContent;
+			u32* ptr                                        = content;
+			u32 i                                           = content[0];
+			for (; ptr++, i != 0; i--) {
+				u32 index        = *ptr;
+				TObject* pObject = control->getObject_index(index);
 				if (pObject) {
-					rCnt.push_back(&pObject->referFunctionValue());
+					TFunctionValue& rfv = *pObject->referFunctionValue();
+					rCnt.push_back(&rfv);
 				}
 			}
+
 		} break;
 		case 0x12: {
+			TFunctionValueAttribute_range* pfvaRange = set.range_get();
+
 			if (!pfvaRange) {
 				break;
 			}
@@ -111,6 +96,8 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 			pfvaRange->range_set(arr[0], arr[1]);
 		} break;
 		case 0x13: {
+			TFunctionValueAttribute_range* pfvaRange = set.range_get();
+
 			if (!pfvaRange) {
 				break;
 			}
@@ -120,6 +107,8 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 
 		} break;
 		case 0x14: {
+			TFunctionValueAttribute_range* pfvaRange = set.range_get();
+
 			if (!pfvaRange) {
 				break;
 			}
@@ -129,6 +118,8 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 
 		} break;
 		case 0x15: {
+			TFunctionValueAttribute_range* pfvaRange = set.range_get();
+
 			if (!pfvaRange) {
 				break;
 			}
@@ -140,6 +131,8 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 
 		} break;
 		case 0x16: {
+			TFunctionValueAttribute_interpolate* pfvaInterpolate = set.interpolate_get();
+
 			if (!pfvaInterpolate) {
 				break;
 			}
@@ -152,6 +145,7 @@ void TObject::prepare(const JStudio::fvb::data::TParse_TBlock& block, JStudio::f
 		pData = dat.mNext;
 	}
 
+end:
 	mBaseFV->prepare();
 	/*
 	.loc_0x0:

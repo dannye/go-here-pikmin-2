@@ -843,7 +843,7 @@ void Obj::walkFunc()
 		}
 	}
 
-	f32 rotationSpeed, moveSpeed, turnSpeed; // should be f31, f30, f29
+	f32 moveSpeed, turnSpeed, rotationSpeed; // should be f31, f30, f29
 	moveSpeed     = C_GENERALPARMS.mMoveSpeed();
 	rotationSpeed = C_GENERALPARMS.mMaxTurnAngle();
 	turnSpeed     = C_GENERALPARMS.mTurnSpeed();
@@ -1004,7 +1004,7 @@ void Obj::walkFunc()
 
 	bool isInTurn = false; // lets the wraith do SICK DRIFTS
 	// turn inline hell is here
-	f32 angleDist = getAngDist2(mTargetPosition);
+	f32 angleDist = getAngDist(mTargetPosition);
 
 	if (fabs((int)(angleDist > 0.25f))) {
 		isInTurn = true;
@@ -3343,6 +3343,7 @@ void Obj::jointMtxCalc(int jointIdx)
 	if (jointIdx < 2 && C_PARMS->mUseTyreForJointCalc) {
 		f32 sinVal1 = C_PARMS->mArmRotationA * absF(sinf(mTyre->mCurrentRotation2)); // f23
 		f32 sinVal2 = C_PARMS->mArmRotationB * absF(sinf(mTyre->mCurrentRotation2)); // f24
+		vec2.y = sinVal2;
 		getStateID();                                                                // unused
 
 		if (mTyre->mCurrentRotation2 < 0.0f) {

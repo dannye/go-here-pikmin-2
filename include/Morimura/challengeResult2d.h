@@ -52,6 +52,14 @@ struct TChallengeResultDemoScreen : public TScreenBase {
 	void setComplete(bool);
 	void reset();
 
+	void reset2()
+	{
+		mIsActive = true;
+		for (int i = 0; i < mAnimScreenCountMax; i++) {
+			mAnimScreens[i]->mCurrentFrame = 0.0f;
+		}
+	}
+
 	// _00     = VTBL
 	// _00-_18 = TScreenBase
 	og::Screen::AnimPane* mAnimPane1; // _18
@@ -140,17 +148,17 @@ struct TChallengeResult : public TTestBase {
 	static ResTIMG* mFlowerTexture;    // nullptr
 	static ResTIMG* mRedFlowerTexture; // nullptr
 
-	static f32 mMoveSpeed;               // 12.0f
-	static f32 mAngRate;                 // 0.3f
-	static f32 mAngVelMax;               // 20.0f
-	static f32 mAccel;                   // 0.1f
-	static bool mTestDemo;               // true
-	static bool mComplete;               // true
-	static s16 mTestRankInOrder;         // 0xFFFF
-	static f32 mFlashInterval;           // 40.0f
-	static f32 mDemoSpeedUpRate;         // 2.0f
-	static f32 mDemoSpeedUpMax;          // 3.0f
-	static JUtility::TColor mFlashColor; // 255, 255, 0, 255
+	static f32 mMoveSpeed;       // 12.0f
+	static f32 mAngRate;         // 0.3f
+	static f32 mAngVelMax;       // 20.0f
+	static f32 mAccel;           // 0.1f
+	static bool mTestDemo;       // true
+	static bool mComplete;       // true
+	static s16 mTestRankInOrder; // 0xFFFF
+	static f32 mFlashInterval;   // 40.0f
+	static f32 mDemoSpeedUpRate; // 2.0f
+	static f32 mDemoSpeedUpMax;  // 3.0f
+	static u8 mFlashColor[];     // 255, 255, 0, 255 (not a color struct since its in sdata not sbss)
 
 	enum ResultFlags {
 		ChalResult_Is2Player = 1,
@@ -241,11 +249,11 @@ struct TClearTexture {
 };
 
 struct TChallengeResultScene : public THIOScene {
+	virtual const char* getResName() const { return ""; }                    // _1C (weak)
+	virtual void doCreateObj(JKRArchive*) { }                                // _20 (weak)
 	virtual SceneType getSceneType() { return SCENE_CHALLENGE_RESULT; }      // _08 (weak)
 	virtual ScreenOwnerID getOwnerID() { return OWNER_MRMR; }                // _0C (weak)
 	virtual ScreenMemberID getMemberID() { return MEMBER_CHALLENGE_RESULT; } // _10 (weak)
-	virtual const char* getResName() const { return ""; }                    // _1C (weak)
-	virtual void doCreateObj(JKRArchive*) { }                                // _20 (weak)
 	virtual void doUserCallBackFunc(Resource::MgrCommand*);                  // _24
 
 	// _00      = VTBL

@@ -1829,7 +1829,7 @@ void BigTreasureAttackMgr::startNewWaterList()
 		speedFactor = 1.0f;
 	}
 
-	f32 vertSpeed = (350.0f / sys->mDeltaTime) / 20.0f;
+	f32 vertSpeed = 350.0f / sys->mDeltaTime / 20.0f;
 
 	f32 speed = ((0.5f * speedFactor) / (vertSpeed / 20.0f)) / sys->mDeltaTime;
 
@@ -2381,7 +2381,7 @@ void BigTreasureAttackMgr::startElecAttack()
 
 	f32 attackVal = (f32)mAttackData->mElecMaxNodes * 0.25f;
 	for (int i = 0; i < 3; i++) {
-		mElecSENodeIDs[i] = attackVal * f32(i);
+		mElecSENodeIDs[i] = attackVal * (f32)(i + 1);
 	}
 
 	/*
@@ -2728,7 +2728,7 @@ void BigTreasureAttackMgr::startNewElecList()
 		}
 
 		for (int i = 0; i < mAttackData->mElecPlacedNodes; i++) {
-			BigTreasureElecAttack* nextNextNode = elecNode->getNext();
+			BigTreasureElecAttack* nextNextNode = nextNode->getNext();
 			if (nextNextNode && !nextNode->mConnectedNode) {
 				nextNode->mConnectedNode = nextNextNode;
 				if (nextNode->mConnectedNode) {

@@ -126,7 +126,7 @@ struct J2DScrnBlockPictureParameter {
 	u8 _06[2];                           // _06 - padding?
 	u16 _08[4];                          // _08
 	JGeometry::TVec2<s16> mTexCoords[4]; // _10
-	GXColor mCornerColor[4];             // _20
+	u32 mCornerColor[4];                 // _20 (using u32 instead of GXColor fixes some functions)
 };
 
 struct J2DScreenInfoBlock : public J2DScrnBlockHeader {
@@ -278,12 +278,6 @@ struct J2DPane {
 		calcMtx();
 	}
 
-	inline void multScale(f32 scale)
-	{
-		mScale *= scale;
-		calcMtx();
-	}
-
 	inline void setAlphaFromFloat(f32 alpha)
 	{
 		if (alpha >= 0.0f) {
@@ -331,6 +325,7 @@ struct J2DPane {
 		calcMtx();
 	}
 
+	inline f32 getOffsetX() { return mOffset.x; }
 	inline f32 getOffsetY() { return mOffset.y; }
 
 	inline void setAngleY(f32 a)
@@ -371,6 +366,8 @@ struct J2DPane {
 	f32 getTranslateY() const { return mOffset.y; }
 	JGeometry::TVec2f getTranslate() const { return mOffset; }
 	int getKind() const { return mBloBlockType; }
+	f32 getRotateX() const { return mAngleX; }
+	f32 getRotateY() const { return mAngleY; }
 	f32 getRotateZ() const { return mAngleZ; }
 	f32 getRotOffsetX() const { return mAnchorPoint.x; }
 	f32 getRotOffsetY() const { return mAnchorPoint.y; }
@@ -397,18 +394,11 @@ struct J2DPane {
 		mGlobalBounds  = other.mGlobalBounds;
 		mClipRect      = other.mClipRect;
 
-		// these are probably supposed to be some sort of Mtx inline (not PSMTXCopy because that would make sense)
-		for (int x = 0; x < 3; x++) {
-			for (int y = 0; y < 4; y++) {
-				mPositionMtx[x][y] = other.mPositionMtx[x][y];
-			}
-		}
-
-		for (int x = 0; x < 3; x++) {
-			for (int y = 0; y < 4; y++) {
-				mGlobalMtx[x][y] = other.mGlobalMtx[x][y];
-			}
-		}
+		struct PaneMtx {
+			Mtx mtx;
+		};
+		*(PaneMtx*)mPositionMtx = *(const PaneMtx*)other.mPositionMtx;
+		*(PaneMtx*)mGlobalMtx   = *(const PaneMtx*)other.mGlobalMtx;
 
 		mIsVisible         = other.mIsVisible;
 		mCullMode          = other.mCullMode;

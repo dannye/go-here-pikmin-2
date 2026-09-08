@@ -87,13 +87,13 @@ static GXRenderModeObj localPal60608x448IntDf = { VI_TVMODE_EURGB60_INT,
 	                                              { 7, 7, 12, 12, 12, 7, 7 } };
 
 static GXRenderModeObj* sRenderModeTable[4]
-    = { &localNtsc608x448IntDfProg, &localNtsc608x448IntDf, &localPal608x448IntDf, &localPal60608x448IntDf };
+    = { &localNtsc608x448IntDf, &localNtsc608x448IntDfProg, &localPal608x448IntDf, &localPal60608x448IntDf };
 
 System::ERenderMode System::mRenderMode;
 System* sys;
 System::GXVerifyArg System::sVerifyArg;
 
-bool sUseABXCommand = true;
+static bool sUseABXCommand = true;
 
 static JUTException::ExCallbackObject exCallbackObject;
 
@@ -413,7 +413,7 @@ System::System()
 	sUseABXCommand = true;
 	initCurrentHeapMutex();
 	JKRHeap* heap = JKRGetCurrentHeap();
-	mSysHeap      = JKRExpHeap::create(0x428000, nullptr, true);
+	mSysHeap      = JKRExpHeap::create(SYSTEM_HEAP_SIZE, nullptr, true);
 	mSysHeap->becomeCurrentHeap();
 	mHeapStatus = new HeapStatus;
 	construct();
@@ -434,7 +434,7 @@ System::~System()
 	// UNUSED FUNCTION
 }
 
-char* cMapFileName = "/pikmin2UP.map"; // !!
+static char* cMapFileName = "/pikmin2UP.map"; // !!
 
 /**
  * @note Address: 0x80422504
@@ -583,7 +583,7 @@ void System::createSoundSystem()
 	PSM::Factory* factory = new PSM::Factory;
 	factory->mMakeSeFunc  = PSM::SeSound::makeSeSound;
 	factory->mHeap        = old;
-	factory->mHeapSize    = 0x900000;
+	factory->mHeapSize    = PSM_FACTORY_HEAP_SIZE;
 	factory->mAafFile     = file;
 	factory->newSoundSystem();
 
