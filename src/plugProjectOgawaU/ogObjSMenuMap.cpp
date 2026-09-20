@@ -17,7 +17,7 @@ namespace newScreen {
 
 u64 map_icon_tag[22]
     = { 'oniyon_r', 'oniyon_b', 'oniyon_y', 'piki_r',   'piki__b', 'piki_y',   'piki_bl',  'piki_w',   'piki_fr', 'piki_me', 'kanketu',
-	    'cave',     'pot',      'luji_bs',  'orima_bs', 'ufo',     'takar_bs', 'takar_bs', 'takar_bs', 'cave',    'comp_c',  'cave' };
+        'cave',     'pot',      'luji_bs',  'orima_bs', 'ufo',     'takar_bs', 'takar_bs', 'takar_bs', 'cave',    'comp_c',  'cave' };
 
 /**
  * @note Address: N/A
@@ -140,7 +140,11 @@ void ObjSMenuMap::setMapTexture()
 			mMapTexPane->changeTexture(mRadarMapTexture->mTexInfo, 0);
 			mUpdateCaveTex = 1;
 		} else {
+#if defined(VERSION_JP)
+			JUT_PANICLINE(384, "SMenuMap : randMapMgr is not found!!!\n");
+#else
 			JUT_PANICLINE(390, "SMenuMap : randMapMgr is not found!!!\n");
+#endif
 		}
 	} else {
 		switch (mDisp->mCourseIndex) {
@@ -310,7 +314,11 @@ void ObjSMenuMap::initMapIcon(JKRArchive* arc)
 		FOREACH_NODE(Radar::Point, Radar::mgr->mActiveRadarNodes.mChild, cPoint)
 		{
 			int objType = cPoint->mObjType;
+#if defined(VERSION_JP)
+			JUT_ASSERTLINE(563, objType >= 0 && objType < 22, "Radar type ERR!! (%d)\n", objType);
+#else
 			JUT_ASSERTLINE(569, objType >= 0 && objType < 22, "Radar type ERR!! (%d)\n", objType);
+#endif
 			Vector2f cPos = cPoint->getPosition();
 			Vector2f newPos(0.0f);
 			f32 y  = cPos.y;
@@ -1306,7 +1314,11 @@ void ObjSMenuMap::appendCaveName(J2DPane* parent, u16 caveIndex, u64 tag)
 		mCaveLabelTextBoxes[mCaveLabelCount] = pane;
 		mCaveLabelCount++;
 	} else {
+#if defined(VERSION_JP)
+		JUT_PANICLINE(739, "cave name number is overflow!!\n");
+#else
 		JUT_PANICLINE(745, "cave name number is overflow!!\n");
+#endif
 	}
 }
 
@@ -1351,7 +1363,7 @@ void ObjSMenuMap::transMap()
 	}
 	f32 X   = SQUARE(inputs.x);
 	f32 Y   = SQUARE(inputs.y);
-	f32 mag = _sqrtf(X + Y);
+	f32 mag = sqrtfClamped(X + Y);
 	if (mag > 1.0f) {
 		mag = 1.0f;
 	}

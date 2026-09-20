@@ -95,6 +95,12 @@ struct TRenderingProcessor : public TRenderingProcessorBase {
 	void preProcCenteringCode(uint);
 	void preProcCenteringID(uint, uint);
 	void setFont(JUTFont* font);
+	inline void setDefaultCharColor(JUtility::TColor color) { mDefaultCharColor.set(color); }
+	inline void setDefaultGradColor(JUtility::TColor color) { mDefaultGradColor.set(color); }
+	inline void setDefaultBlack(JUtility::TColor color) { mDefaultBlack.set(color); }
+	inline void setDefaultWhite(JUtility::TColor color) { mDefaultWhite.set(color); }
+	inline void setImageColorA(const JUtility::TColor& color) { mImageColorA.set(color); }
+	inline void setImageColorB(const JUtility::TColor& color) { mImageColorB.set(color); }
 	void setTextBoxInfo(J2DPane*);
 
 	void setDrawLocate() // weak function
@@ -131,6 +137,11 @@ struct TRenderingProcessor : public TRenderingProcessorBase {
 	void mf();
 	void calcColorCoe(JUtility::TColor const&, JUtility::TColor*);
 	void resetPageInfo();
+
+#if defined(VERSION_PAL)
+	void incPageInfoNum();
+#endif
+
 	void preProcCenteringPre();
 	void preProcCenteringPost();
 

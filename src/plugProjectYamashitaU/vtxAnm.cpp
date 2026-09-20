@@ -4,6 +4,21 @@ namespace Game {
 
 /**
  * @note Address: N/A
+ * @note Size: 0x14
+ */
+void FieldVtxColorInfo::setVtxColorIndex(u16 idx)
+{
+	if (mColorIdx != 0xFFFF) {
+		if (mColorIdx != idx) {
+			return;
+		}
+		return;
+	}
+	mColorIdx = idx;
+}
+
+/**
+ * @note Address: N/A
  * @note Size: 0x44
  */
 FieldVtxColorControl::FieldVtxColorControl()
@@ -721,9 +736,26 @@ lbl_80122B3C:
  * @note Address: N/A
  * @note Size: 0xA4
  */
-void FieldVtxColorMgr::setupFieldVtxColorInfoFromFan(void*, int, int, int, int)
+void FieldVtxColorMgr::setupFieldVtxColorInfoFromFan(void* fan, int p1, int p2, int p3, int p4)
 {
-	// UNUSED FUNCTION
+	u8* vertices = static_cast<u8*>(fan);
+	u8* vertex0  = vertices;
+	u8* vertex1  = vertices + p1;
+
+	u16 positionIndex0 = *reinterpret_cast<u16*>(vertex0 + p2);
+	u16 positionIndex1 = *reinterpret_cast<u16*>(vertex1 + p2);
+	u16 colorIndex0    = *reinterpret_cast<u16*>(vertex0 + p3);
+	u16 colorIndex1    = *reinterpret_cast<u16*>(vertex1 + p3);
+
+	mInfo[positionIndex0].setVtxColorIndex(colorIndex0);
+	mInfo[positionIndex1].setVtxColorIndex(colorIndex1);
+
+	for (int i = 2; i < p4; i++) {
+		u8* vertex2        = vertices + i * p1;
+		u16 positionIndex2 = *reinterpret_cast<u16*>(vertex2 + p2);
+		u16 colorIndex2    = *reinterpret_cast<u16*>(vertex2 + p3);
+		mInfo[positionIndex2].setVtxColorIndex(colorIndex2);
+	}
 }
 
 /**
@@ -732,16 +764,41 @@ void FieldVtxColorMgr::setupFieldVtxColorInfoFromFan(void*, int, int, int, int)
  */
 void FieldVtxColorMgr::setupFieldVtxColorInfoFromStrip(void* strip, int p1, int p2, int p3, int p4)
 {
-	u8* vertices      = static_cast<u8*>(strip);
-	int triangleCount = (p4 <= 3) ? 1 : p4 - 2;
-	for (int i = 0; i < triangleCount; i++) {
-		for (int j = 0; j < 3; j++) {
-			u8* vertex        = vertices + (i + j) * p1;
-			u16 positionIndex = *reinterpret_cast<u16*>(vertex + p2);
-			u16 colorIndex    = *reinterpret_cast<u16*>(vertex + p3);
-			if (mInfo[positionIndex].mColorIdx == 0xFFFF) {
-				mInfo[positionIndex].mColorIdx = colorIndex;
-			}
+	u8* vertices = static_cast<u8*>(strip);
+	u8* vertex0  = vertices;
+	u8* vertex1  = vertices + p1;
+	u8* vertex2  = vertices + 2 * p1;
+
+	u16 positionIndex0 = *reinterpret_cast<u16*>(vertex0 + p2);
+	u16 positionIndex1 = *reinterpret_cast<u16*>(vertex1 + p2);
+	u16 positionIndex2 = *reinterpret_cast<u16*>(vertex2 + p2);
+	u16 colorIndex0    = *reinterpret_cast<u16*>(vertex0 + p3);
+	u16 colorIndex1    = *reinterpret_cast<u16*>(vertex1 + p3);
+	u16 colorIndex2    = *reinterpret_cast<u16*>(vertex2 + p3);
+
+	if (p4 <= 3) {
+		mInfo[positionIndex0].setVtxColorIndex(colorIndex0);
+		mInfo[positionIndex1].setVtxColorIndex(colorIndex1);
+		mInfo[positionIndex2].setVtxColorIndex(colorIndex2);
+	} else {
+		int offset        = 0;
+		int triangleCount = p4 - 2;
+		for (int i = 0; i < triangleCount; i++) {
+			vertex0 = vertices + offset;
+			vertex1 = vertices + (i + 1) * p1;
+			vertex2 = vertices + (i + 2) * p1;
+
+			positionIndex0 = *reinterpret_cast<u16*>(vertex0 + p2);
+			positionIndex1 = *reinterpret_cast<u16*>(vertex1 + p2);
+			positionIndex2 = *reinterpret_cast<u16*>(vertex2 + p2);
+			colorIndex0    = *reinterpret_cast<u16*>(vertex0 + p3);
+			colorIndex1    = *reinterpret_cast<u16*>(vertex1 + p3);
+			colorIndex2    = *reinterpret_cast<u16*>(vertex2 + p3);
+
+			mInfo[positionIndex0].setVtxColorIndex(colorIndex0);
+			mInfo[positionIndex1].setVtxColorIndex(colorIndex1);
+			mInfo[positionIndex2].setVtxColorIndex(colorIndex2);
+			offset += p1;
 		}
 	}
 	/*
@@ -905,34 +962,10 @@ void FieldVtxColorMgr::setupFieldVtxColorInfo(J3DShape* shape)
 			u16 val = *reinterpret_cast<u16*>(ptr + 1);
 			if (ptr[0] == 152) {
 				setupFieldVtxColorInfoFromStrip(&ptr[3], p3, p1, p2, val);
-
+			} else if (ptr[0] == 160) {
+				setupFieldVtxColorInfoFromFan(&ptr[3], p3, p1, p2, val);
 			} else {
-				if (ptr[0] != 160) {
-					return;
-				}
-
-				u8* vertex        = &ptr[3];
-				u16 positionIndex = *reinterpret_cast<u16*>(vertex + p1);
-				u16 colorIndex    = *reinterpret_cast<u16*>(vertex + p2);
-				if (mInfo[positionIndex].mColorIdx == 0xFFFF) {
-					mInfo[positionIndex].mColorIdx = colorIndex;
-				}
-
-				vertex        = &ptr[3] + p3;
-				positionIndex = *reinterpret_cast<u16*>(vertex + p1);
-				colorIndex    = *reinterpret_cast<u16*>(vertex + p2);
-				if (mInfo[positionIndex].mColorIdx == 0xFFFF) {
-					mInfo[positionIndex].mColorIdx = colorIndex;
-				}
-
-				for (int j = 2; j < val; j++) {
-					vertex        = &ptr[3] + j * p3;
-					positionIndex = *reinterpret_cast<u16*>(vertex + p1);
-					colorIndex    = *reinterpret_cast<u16*>(vertex + p2);
-					if (mInfo[positionIndex].mColorIdx == 0xFFFF) {
-						mInfo[positionIndex].mColorIdx = colorIndex;
-					}
-				}
+				return;
 			}
 			ptr += p3 * val;
 			ptr += 3;

@@ -1,4 +1,6 @@
+#include "IDelegate.h"
 #include "Game/NaviState.h"
+#include "Game/gameConfig.h"
 #include "Game/CameraMgr.h"
 #include "Game/MapMgr.h"
 #include "Game/NaviParms.h"
@@ -17,7 +19,7 @@
 #include "Game/Entities/ItemCave.h"
 #include "efx/TEnemyDownSmoke.h"
 #include "Game/rumble.h"
-#include "PSM/Navi.h"
+#include "PSSystem/PSMainSide_ObjSound.h"
 #include "Game/PikiState.h"
 #include "PSSystem/PSSystemIF.h"
 #include "KandoLib/Choice.h"
@@ -420,12 +422,18 @@ void NaviWalkState::exec(Navi* navi)
 				return;
 			}
 
-			Onyon* onyon = navi->checkOnyon();
-			if (onyon && navi->mController1->isButtonDown(JUTGamePad::PRESS_A) && onyon->mOnyonType != ONYON_TYPE_POD) {
-				NaviContainerArg containerArg(onyon);
-				transit(navi, NSID_Container, &containerArg);
-				return;
+#if defined(VERSION_JP)
+			if (!gGameConfig.mParms.mE3version.mData) {
+#endif
+				Onyon* onyon = navi->checkOnyon();
+				if (onyon && navi->mController1->isButtonDown(JUTGamePad::PRESS_A) && onyon->mOnyonType != ONYON_TYPE_POD) {
+					NaviContainerArg containerArg(onyon);
+					transit(navi, NSID_Container, &containerArg);
+					return;
+				}
+#if defined(VERSION_JP)
 			}
+#endif
 
 			if (navi->mController1->isButtonDown(JUTGamePad::PRESS_B)) {
 				transit(navi, NSID_Gather, nullptr);
@@ -870,7 +878,11 @@ void NaviWalkState::initAI_animation(Navi* navi)
 	}
 
 	int naviIdx = navi->mNaviIndex;
+#if defined(VERSION_JP)
+	if (gameSystem->isStoryMode() && playData->isStoryFlag(STORY_DebtPaid)) {
+#else
 	if (naviIdx == NAVIID_Louie && gameSystem->isStoryMode() && playData->isStoryFlag(STORY_DebtPaid)) {
+#endif
 		naviIdx++; // president!
 	}
 
@@ -1466,7 +1478,11 @@ void NaviFollowState::exec(Navi* navi)
 			// get right id for each navi for sounds
 			// 0 for olimar, 1 for louie, or 2 for president
 			int naviID = navi->mNaviIndex;
+#if defined(VERSION_JP)
+			if (gameSystem->isStoryMode() && playData->isStoryFlag(STORY_DebtPaid)) {
+#else
 			if (naviID == NAVIID_Louie && gameSystem->isStoryMode() && playData->isStoryFlag(STORY_DebtPaid)) {
+#endif
 				naviID++;
 			}
 
@@ -2062,7 +2078,11 @@ void NaviNukuState::onKeyEvent(Navi* navi, SysShape::KeyEvent const& key)
 void NaviNukuAdjustState::init(Navi* navi, StateArg* stateArg)
 {
 	playData->setDemoFlag(DEMO_Pluck_First_Pikmin);
+#if defined(VERSION_JP)
+	P2ASSERTLINE(2760, stateArg);
+#else
 	P2ASSERTLINE(2769, stateArg);
+#endif
 
 	NaviNukuAdjustStateArg* arg = static_cast<NaviNukuAdjustStateArg*>(stateArg);
 
@@ -2390,7 +2410,8 @@ void NaviNukuAdjustState::exec(Navi* navi)
 	mIsMoving--;
 	Vector3f naviPos = navi->getPosition();
 
-	Vector3f pikiToNavi    = mCollidedPikiPosition - naviPos;
+	Vector3f pikiToNavi = mCollidedPikiPosition;
+	pikiToNavi -= naviPos;
 	f32 distancePikiToNavi = pikiToNavi.normalise();
 
 	// If the distance is 0, return
@@ -2409,7 +2430,8 @@ void NaviNukuAdjustState::exec(Navi* navi)
 	}
 
 	// Interpolate 35% current velocity and 65% new velocity
-	Vector3f blendedVel = currentVel * 0.35f + newVel * 0.65f;
+	Vector3f blendedVel = currentVel * 0.35f;
+	blendedVel += newVel * 0.65f;
 
 	f32 speed = blendedVel.normalise();
 	if (speed != 0.0f) {
@@ -2982,7 +3004,11 @@ void NaviNukuAdjustState::cleanup(Navi* navi)
  */
 void NaviDopeState::init(Navi* navi, StateArg* stateArg)
 {
+#if defined(VERSION_JP)
+	P2ASSERTLINE(2997, stateArg);
+#else
 	P2ASSERTLINE(3006, stateArg);
+#endif
 	mDopeType         = static_cast<NaviDopeArg*>(stateArg)->mType;
 	Vector3f naviPos  = navi->getPosition(); // f31, f30, f29
 	Vector3f squadPos = Vector3f(0.0f);      // f28, f27, f26
@@ -3507,9 +3533,17 @@ void NaviDopeState::onKeyEvent(Navi* navi, SysShape::KeyEvent const& keyEvent)
  */
 void NaviClimbState::init(Navi* navi, StateArg* stateArg)
 {
+#if defined(VERSION_JP)
+	JUT_PANICLINE(3100, "navi climb\n");
+#else
 	JUT_PANICLINE(3109, "navi climb\n");
+#endif
 
+#if defined(VERSION_JP)
+	P2ASSERTLINE(3103, stateArg);
+#else
 	P2ASSERTLINE(3112, stateArg);
+#endif
 	navi->startMotion(IPikiAnims::HNOBORU, IPikiAnims::HNOBORU, navi, nullptr);
 	navi->enableMotionBlend();
 	mClimbObj = static_cast<ClimbStateArg*>(stateArg)->mObj;
@@ -3699,7 +3733,11 @@ void NaviFlickState::init(Navi* navi, StateArg* stateArg)
 {
 	NaviFlickArg* flickArg;
 	if (stateArg == nullptr) {
+#if defined(VERSION_JP)
+		JUT_PANICLINE(3275, "flick needs NaviFlickInitArg !\n");
+#else
 		JUT_PANICLINE(3284, "flick needs NaviFlickInitArg !\n");
+#endif
 	} else {
 		flickArg   = static_cast<NaviFlickArg*>(stateArg);
 		mDamage    = flickArg->mDamage;
@@ -3983,7 +4021,11 @@ void NaviSaraiExitState::bounceCallback(Navi* navi, Sys::Triangle*)
  */
 void NaviContainerState::init(Navi* navi, StateArg* stateArg)
 {
+#if defined(VERSION_JP)
+	P2ASSERTLINE(3593, stateArg);
+#else
 	P2ASSERTLINE(3602, stateArg);
+#endif
 	mOnyon = static_cast<NaviContainerArg*>(stateArg)->mOnyon;
 
 	Screen::gGame2DMgr->setGamePad(navi->mController1);
@@ -4181,9 +4223,17 @@ void NaviContainerState::cleanup(Navi* navi)
 void NaviAbsorbState::init(Navi* navi, StateArg* stateArg)
 {
 	NaviAbsorbArg* absorbArg = static_cast<NaviAbsorbArg*>(stateArg);
+#if defined(VERSION_JP)
+	P2ASSERTLINE(3906, absorbArg != nullptr);
+#else
 	P2ASSERTLINE(3915, absorbArg != nullptr);
+#endif
 	mDrop = absorbArg->mDrop;
+#if defined(VERSION_JP)
+	P2ASSERTLINE(3908, mDrop != nullptr);
+#else
 	P2ASSERTLINE(3917, mDrop != nullptr);
+#endif
 	navi->startMotion(IPikiAnims::MIZUNOMI, IPikiAnims::MIZUNOMI, navi, nullptr);
 	navi->mSoundObj->startSound(PSSE_PL_DRINK, 0);
 	mSubState             = ABSORB_Start;
@@ -4227,7 +4277,11 @@ void NaviAbsorbState::onKeyEvent(Navi* navi, SysShape::KeyEvent const& key)
 		mSubState = ABSORB_Absorbing;
 		break;
 	case KEYEVENT_LOOP_END:
+#if defined(VERSION_JP)
+		P2ASSERTLINE(3947, mDrop->mObjectTypeID == OBJTYPE_Honey);
+#else
 		P2ASSERTLINE(3956, mDrop->mObjectTypeID == OBJTYPE_Honey);
+#endif
 		ItemHoney::Item* item = mDrop;
 		if (!mDrop->isAlive() || !item->isShrinking()) {
 			mSubState = ABSORB_Finished;
@@ -4236,7 +4290,11 @@ void NaviAbsorbState::onKeyEvent(Navi* navi, SysShape::KeyEvent const& key)
 		break;
 	case KEYEVENT_END:
 		if (mHasAbsorbed) {
+#if defined(VERSION_JP)
+			P2ASSERTLINE(3959, mDrop->mObjectTypeID == OBJTYPE_Honey);
+#else
 			P2ASSERTLINE(3968, mDrop->mObjectTypeID == OBJTYPE_Honey);
+#endif
 			navi->incDopeCount(mDrop->mHoneyType != HONEY_R);
 			transit(navi, NSID_Walk, nullptr);
 		} else {
@@ -4262,7 +4320,11 @@ void NaviAbsorbState::cleanup(Navi* navi)
  */
 void NaviDamagedState::init(Navi* navi, StateArg* stateArg)
 {
+#if defined(VERSION_JP)
+	P2ASSERTLINE(3993, stateArg);
+#else
 	P2ASSERTLINE(4002, stateArg);
+#endif
 	navi->startMotion(IPikiAnims::DAMAGE, IPikiAnims::DAMAGE, navi, nullptr);
 	navi->enableMotionBlend();
 }
@@ -4345,14 +4407,30 @@ void NaviDeadState::onKeyEvent(Navi* navi, SysShape::KeyEvent const& keyEvent)
 	}
 }
 
-// /**
-//  * @note Address: N/A
-//  * @note Size: 0x2FC
-//  */
-// void NaviGatherInitArg::findTargetPikmin(Navi* navi)
-// {
-// 	// UNUSED FUNCTION
-// }
+/**
+ * @note Address: N/A
+ * @note Size: 0x2FC
+ */
+Piki* NaviGatherInitArg::findTargetPikmin(Navi* navi)
+{
+	Piki* nearest = nullptr;
+	f32 nearestDistance;
+	Vector3f position = navi->getPosition();
+	Iterator<Piki> iterator(pikiMgr);
+	CI_LOOP(iterator)
+	{
+		Piki* piki = *iterator;
+		if (piki->isAlive()) {
+			Vector3f offset = piki->getPosition() - position;
+			f32 distance = offset.length();
+			if (!nearest || distance < nearestDistance) {
+				nearest = piki;
+				nearestDistance = distance;
+			}
+		}
+	}
+	return nearest;
+}
 
 /**
  * @note Address: 0x801858DC
@@ -4360,7 +4438,7 @@ void NaviDeadState::onKeyEvent(Navi* navi, SysShape::KeyEvent const& keyEvent)
  */
 void NaviGatherState::init(Navi* navi, StateArg* stateArg)
 {
-	NaviGatherArg* arg = static_cast<NaviGatherArg*>(stateArg);
+	NaviGatherInitArg* arg = static_cast<NaviGatherInitArg*>(stateArg);
 	if (arg) {
 		_10 = arg->_00;
 		_11 = arg->_01;
@@ -4515,8 +4593,8 @@ void NaviThrowWaitState::init(Navi* navi, StateArg* stateArg)
 		mHeldPiki->mFsm->transit(mHeldPiki, PIKISTATE_Hanged, nullptr);
 		mHasHeldPiki = true;
 	}
-	navi->mHoldPikiCharge = mHoldChargeLevel / 3.0f * (CG_NAVIPARMS(navi).mThrowDistanceMax() - CG_NAVIPARMS(navi).mThrowDistanceMin())
-	                      + CG_NAVIPARMS(navi).mThrowDistanceMin();
+	navi->mHoldPikiCharge  = mHoldChargeLevel / 3.0f * (CG_NAVIPARMS(navi).mThrowDistanceMax() - CG_NAVIPARMS(navi).mThrowDistanceMin())
+	                       + CG_NAVIPARMS(navi).mThrowDistanceMin();
 	navi->mHoldPikiCharge2 = mHoldChargeLevel / 3.0f * (CG_NAVIPARMS(navi).mThrowHeightMax() - CG_NAVIPARMS(navi).mThrowHeightMin())
 	                       + CG_NAVIPARMS(navi).mThrowHeightMin();
 	mNextPikiTimeLimit     = 3.0f;
@@ -4983,10 +5061,11 @@ void NaviThrowWaitState::exec(Navi* navi)
 				transit(navi, NSID_Walk, nullptr);
 				return;
 			}
-			CollPart* part   = navi->mCollTree->getCollPart('rhnd');
-			Vector3f handPos = part->mPosition;
-			Vector3f pikiPos = mNextPiki->getPosition();
-			f32 dist         = handPos.distance(pikiPos);
+			CollPart* part      = navi->mCollTree->getCollPart('rhnd');
+			Vector3f handPos    = part->mPosition;
+			Vector3f pikiPos    = mNextPiki->getPosition();
+			Vector3f handToPiki = handPos - pikiPos;
+			f32 dist            = handToPiki.length();
 			if (!(dist <= 32.5f))
 				return;
 
@@ -5006,13 +5085,10 @@ void NaviThrowWaitState::exec(Navi* navi)
 
 	navi->mNextThrowPiki = mHeldPiki;
 
-	f32 min               = CG_NAVIPARMS(navi).mThrowDistanceMin();
-	f32 max               = CG_NAVIPARMS(navi).mThrowDistanceMax();
-	navi->mHoldPikiCharge = mHoldChargeLevel / 3.0f * (max - min) + min;
-
-	max                    = CG_NAVIPARMS(navi).mThrowHeightMax();
-	min                    = CG_NAVIPARMS(navi).mThrowHeightMin();
-	navi->mHoldPikiCharge2 = mHoldChargeLevel / 3.0f * (max - min) + min;
+	navi->mHoldPikiCharge  = mHoldChargeLevel / 3.0f * (CG_NAVIPARMS(navi).mThrowDistanceMax() - CG_NAVIPARMS(navi).mThrowDistanceMin())
+	                       + CG_NAVIPARMS(navi).mThrowDistanceMin();
+	navi->mHoldPikiCharge2 = mHoldChargeLevel / 3.0f * (CG_NAVIPARMS(navi).mThrowHeightMax() - CG_NAVIPARMS(navi).mThrowHeightMin())
+	                       + CG_NAVIPARMS(navi).mThrowHeightMin();
 
 	if (mHeldPiki && mHasHeldPiki) {
 		int stateID = mHeldPiki->getStateID();
@@ -6296,92 +6372,15 @@ void NaviDemo_UfoState::initSuck(Navi* navi)
 {
 	Onyon* ship   = ItemOnyon::mgr->mUfo;
 	Vector3f diff = ship->getSuckPos() - navi->getPosition();
-	f32 dist      = diff.length();
-	mDist         = dist;
+	mDist         = diff.length();
 
-	_14               = 0.0f;
-	navi->mVelocity.y = 0.0f;
+	_14             = 0.0f;
+	navi->mVelocity = Vector3f(navi->mVelocity.x, 0.0f, navi->mVelocity.z);
 
 	mScaleMod = 1.0f;
 	mStartPos = navi->getPosition();
 	mProgress = 0.0f;
 	mSpeed    = 0.0f;
-	/*
-	stwu     r1, -0x40(r1)
-	mflr     r0
-	stw      r0, 0x44(r1)
-	stw      r31, 0x3c(r1)
-	stw      r30, 0x38(r1)
-	mr       r30, r4
-	stw      r29, 0x34(r1)
-	mr       r29, r3
-	addi     r3, r1, 0x14
-	lwz      r12, 0(r4)
-	lwz      r5, mgr__Q24Game9ItemOnyon@sda21(r13)
-	lwz      r12, 8(r12)
-	lwz      r31, 0xb0(r5)
-	mtctr    r12
-	bctrl
-	mr       r4, r31
-	addi     r3, r1, 0x20
-	lwz      r12, 0(r31)
-	lwz      r12, 0x194(r12)
-	mtctr    r12
-	bctrl
-	lfs      f1, 0x24(r1)
-	lfs      f0, 0x18(r1)
-	lfs      f3, 0x28(r1)
-	fsubs    f4, f1, f0
-	lfs      f2, 0x1c(r1)
-	lfs      f1, 0x20(r1)
-	lfs      f0, 0x14(r1)
-	fsubs    f2, f3, f2
-	fmuls    f3, f4, f4
-	fsubs    f1, f1, f0
-	lfs      f0, lbl_80518BE0@sda21(r2)
-	fmuls    f2, f2, f2
-	fmadds   f1, f1, f1, f3
-	fadds    f1, f2, f1
-	fcmpo    cr0, f1, f0
-	ble      lbl_801880B8
-	ble      lbl_801880BC
-	frsqrte  f0, f1
-	fmuls    f1, f0, f1
-	b        lbl_801880BC
-
-lbl_801880B8:
-	fmr      f1, f0
-
-lbl_801880BC:
-	stfs     f1, 0x18(r29)
-	mr       r4, r30
-	lfs      f2, lbl_80518BE0@sda21(r2)
-	addi     r3, r1, 8
-	lfs      f0, lbl_80518C48@sda21(r2)
-	stfs     f2, 0x14(r29)
-	stfs     f2, 0x204(r30)
-	stfs     f0, 0x1c(r29)
-	lwz      r12, 0(r30)
-	lwz      r12, 8(r12)
-	mtctr    r12
-	bctrl
-	lfs      f1, 8(r1)
-	lfs      f0, lbl_80518BE0@sda21(r2)
-	stfs     f1, 0x24(r29)
-	lfs      f1, 0xc(r1)
-	stfs     f1, 0x28(r29)
-	lfs      f1, 0x10(r1)
-	stfs     f1, 0x2c(r29)
-	stfs     f0, 0x20(r29)
-	stfs     f0, 0x30(r29)
-	lwz      r31, 0x3c(r1)
-	lwz      r30, 0x38(r1)
-	lwz      r29, 0x34(r1)
-	lwz      r0, 0x44(r1)
-	mtlr     r0
-	addi     r1, r1, 0x40
-	blr
-	*/
 }
 
 /**
@@ -6391,87 +6390,17 @@ lbl_801880BC:
 bool NaviDemo_UfoState::execSuck(Navi* navi)
 {
 	Vector3f goalPos = ItemOnyon::mgr->mUfo->getSuckPos();
-	Vector3f setPos  = mStartPos + (goalPos - mStartPos) * mProgress;
+	Vector3f dir     = Vector3f::sub2(goalPos, mStartPos);
+	Vector3f setPos  = mStartPos + dir * mProgress;
 	navi->setPosition(setPos, false);
 	navi->mScale = -(mProgress * 0.75f - 1.0f) * mScaleMod;
 
 	mProgress += (mSpeed * sys->mDeltaTime) / mDist;
 	mSpeed += sys->mDeltaTime * 720.0f;
-	return mProgress >= 1.0f;
-	/*
-	stwu     r1, -0x30(r1)
-	mflr     r0
-	stw      r0, 0x34(r1)
-	stw      r31, 0x2c(r1)
-	mr       r31, r4
-	stw      r30, 0x28(r1)
-	mr       r30, r3
-	addi     r3, r1, 8
-	lwz      r5, mgr__Q24Game9ItemOnyon@sda21(r13)
-	lwz      r4, 0xb0(r5)
-	lwz      r12, 0(r4)
-	lwz      r12, 0x194(r12)
-	mtctr    r12
-	bctrl
-	lfs      f1, 0x10(r1)
-	mr       r3, r31
-	lfs      f5, 0x2c(r30)
-	addi     r4, r1, 0x14
-	lfs      f0, 0xc(r1)
-	li       r5, 0
-	lfs      f6, 0x28(r30)
-	fsubs    f2, f1, f5
-	lfs      f4, 0x20(r30)
-	fsubs    f3, f0, f6
-	lfs      f1, 8(r1)
-	lfs      f7, 0x24(r30)
-	fmuls    f0, f2, f4
-	fsubs    f2, f1, f7
-	fmuls    f1, f3, f4
-	fadds    f0, f5, f0
-	fmuls    f2, f2, f4
-	fadds    f1, f6, f1
-	stfs     f0, 0x1c(r1)
-	fadds    f0, f7, f2
-	stfs     f1, 0x18(r1)
-	stfs     f0, 0x14(r1)
-	bl       "setPosition__Q24Game8CreatureFR10Vector3<f>b"
-	lfs      f2, lbl_80518CDC@sda21(r2)
-	lfs      f1, 0x20(r30)
-	lfs      f4, lbl_80518C48@sda21(r2)
-	lfs      f0, 0x1c(r30)
-	fnmsubs  f1, f2, f1, f4
-	lfs      f2, lbl_80518CE0@sda21(r2)
-	fmuls    f0, f1, f0
-	stfs     f0, 0x168(r31)
-	stfs     f0, 0x16c(r31)
-	stfs     f0, 0x170(r31)
-	lwz      r3, sys@sda21(r13)
-	lfs      f3, 0x30(r30)
-	lfs      f1, 0x54(r3)
-	lfs      f0, 0x18(r30)
-	fmuls    f1, f3, f1
-	lfs      f3, 0x20(r30)
-	fdivs    f0, f1, f0
-	fadds    f0, f3, f0
-	stfs     f0, 0x20(r30)
-	lwz      r3, sys@sda21(r13)
-	lfs      f0, 0x30(r30)
-	lfs      f1, 0x54(r3)
-	fmadds   f0, f2, f1, f0
-	stfs     f0, 0x30(r30)
-	lfs      f0, 0x20(r30)
-	fcmpo    cr0, f0, f4
-	cror     2, 1, 2
-	mfcr     r0
-	lwz      r31, 0x2c(r1)
-	rlwinm   r3, r0, 3, 0x1f, 0x1f
-	lwz      r0, 0x34(r1)
-	lwz      r30, 0x28(r1)
-	mtlr     r0
-	addi     r1, r1, 0x30
-	blr
-	*/
+	if (mProgress >= 1.0f) {
+		return true;
+	}
+	return false;
 }
 
 /**
@@ -6597,9 +6526,9 @@ bool NaviDemo_HoleInState::execHesitate(Navi* navi)
 		Vector3f diff    = holePos - navi->getPosition();
 		diff.normalise();
 
+		diff.x *= 2.0f;
+		diff.z *= 2.0f;
 		Vector3f velocity(diff.x, 240.0f, diff.z);
-		velocity.x *= 2.0f;
-		velocity.z *= 2.0f;
 		navi->mVelocity       = velocity;
 		navi->mTargetVelocity = velocity;
 		navi->setMapCollision(false);
@@ -6609,110 +6538,6 @@ bool NaviDemo_HoleInState::execHesitate(Navi* navi)
 	navi->mVelocity       = 0.0f;
 	navi->mTargetVelocity = 0.0f;
 	return false;
-
-	/*
-	stwu     r1, -0x60(r1)
-	mflr     r0
-	stw      r0, 0x64(r1)
-	stfd     f31, 0x50(r1)
-	psq_st   f31, 88(r1), 0, qr0
-	stfd     f30, 0x40(r1)
-	psq_st   f30, 72(r1), 0, qr0
-	stfd     f29, 0x30(r1)
-	psq_st   f29, 56(r1), 0, qr0
-	stw      r31, 0x2c(r1)
-	lbz      r0, 0x12(r3)
-	mr       r31, r4
-	cmplwi   r0, 0
-	beq      lbl_80188B88
-	lwz      r4, 0x14(r3)
-	addi     r3, r1, 0x14
-	lwz      r12, 0(r4)
-	lwz      r12, 8(r12)
-	mtctr    r12
-	bctrl
-	mr       r4, r31
-	addi     r3, r1, 8
-	lwz      r12, 0(r31)
-	lfs      f31, 0x14(r1)
-	lwz      r12, 8(r12)
-	lfs      f30, 0x18(r1)
-	lfs      f29, 0x1c(r1)
-	mtctr    r12
-	bctrl
-	lfs      f0, 0xc(r1)
-	lfs      f2, 0x10(r1)
-	fsubs    f3, f30, f0
-	lfs      f1, 8(r1)
-	fsubs    f4, f29, f2
-	lfs      f0, lbl_80518BE0@sda21(r2)
-	fsubs    f2, f31, f1
-	fmuls    f1, f3, f3
-	fmuls    f3, f4, f4
-	fmadds   f1, f2, f2, f1
-	fadds    f1, f3, f1
-	fcmpo    cr0, f1, f0
-	ble      lbl_80188B20
-	ble      lbl_80188B24
-	frsqrte  f0, f1
-	fmuls    f1, f0, f1
-	b        lbl_80188B24
-
-lbl_80188B20:
-	fmr      f1, f0
-
-lbl_80188B24:
-	lfs      f0, lbl_80518BE0@sda21(r2)
-	fcmpo    cr0, f1, f0
-	ble      lbl_80188B40
-	lfs      f0, lbl_80518C48@sda21(r2)
-	fdivs    f0, f0, f1
-	fmuls    f2, f2, f0
-	fmuls    f4, f4, f0
-
-lbl_80188B40:
-	lfs      f1, lbl_80518C3C@sda21(r2)
-	mr       r3, r31
-	lfs      f0, lbl_80518CEC@sda21(r2)
-	li       r4, 0
-	fmuls    f2, f2, f1
-	fmuls    f4, f4, f1
-	stfs     f2, 0x200(r31)
-	stfs     f0, 0x204(r31)
-	stfs     f4, 0x208(r31)
-	stfs     f2, 0x1e4(r31)
-	stfs     f0, 0x1e8(r31)
-	stfs     f4, 0x1ec(r31)
-	lwz      r12, 0(r31)
-	lwz      r12, 0x1f0(r12)
-	mtctr    r12
-	bctrl
-	li       r3, 1
-	b        lbl_80188BA8
-
-lbl_80188B88:
-	lfs      f0, lbl_80518BE0@sda21(r2)
-	li       r3, 0
-	stfs     f0, 0x200(r31)
-	stfs     f0, 0x204(r31)
-	stfs     f0, 0x208(r31)
-	stfs     f0, 0x1e4(r31)
-	stfs     f0, 0x1e8(r31)
-	stfs     f0, 0x1ec(r31)
-
-lbl_80188BA8:
-	psq_l    f31, 88(r1), 0, qr0
-	lfd      f31, 0x50(r1)
-	psq_l    f30, 72(r1), 0, qr0
-	lfd      f30, 0x40(r1)
-	psq_l    f29, 56(r1), 0, qr0
-	lfd      f29, 0x30(r1)
-	lwz      r0, 0x64(r1)
-	lwz      r31, 0x2c(r1)
-	mtlr     r0
-	addi     r1, r1, 0x60
-	blr
-	*/
 }
 
 /**

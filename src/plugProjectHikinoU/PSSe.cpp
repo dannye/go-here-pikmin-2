@@ -104,7 +104,8 @@ Rappa::Rappa()
  */
 void Rappa::init(u16 id)
 {
-	P2ASSERTLINE(180, id < 2);
+	bool check = (id == 0 || id == 1);
+	P2ASSERTLINE(180, check);
 
 	u32 val    = -(id == 0);
 	mId        = val + 14;
@@ -573,7 +574,7 @@ Builder_EvnSe_Perspective::Builder_EvnSe_Perspective(JGeometry::TBox3f box)
     : mDoSkipSizeCheck(false)
     , mGridSizeX(0)
     , mGridSizeZ(0)
-    , mBox(box)
+    , mBox(box.i, box.f)
     , mYPosition(0.0f)
 {
 	mBox.absolute();
@@ -749,13 +750,17 @@ lbl_80340310:
 void Builder_EvnSe_Perspective::build(f32 volume, PSSystem::EnvSeMgr* mgr)
 {
 	P2ASSERTLINE(596, mgr);
-	f32 totalSizeX = mBox.mMax.x - mBox.mMin.x;
-	f32 totalSizeZ = mBox.mMax.z - mBox.mMin.z;
+	f32 totalSizeX = mBox.f.x - mBox.i.x;
+	f32 totalSizeZ = mBox.f.z - mBox.i.z;
 
 	if (!mDoSkipSizeCheck) {
 		f32* temp = &totalSizeX;
 		int* val  = &mGridSizeX;
-		while (*val = *temp / 1000.0f, val != &mGridSizeZ) {
+		while (true) {
+			*val = *temp / 1000.0f;
+			if (val == &mGridSizeZ) {
+				break;
+			}
 			temp = &totalSizeZ;
 			val  = &mGridSizeZ;
 		}
@@ -767,19 +772,18 @@ void Builder_EvnSe_Perspective::build(f32 volume, PSSystem::EnvSeMgr* mgr)
 	pos.y = mYPosition;
 
 	f32 unitSizeX = totalSizeX / f32(mGridSizeX);
-	f32 startPosX = mBox.mMin.x + unitSizeX / 2;
-
 	f32 unitSizeZ = totalSizeZ / f32(mGridSizeZ);
-	f32 startPosZ = mBox.mMin.z + unitSizeZ / 2;
+	f32 startPosX = mBox.i.x + unitSizeX / 2;
+	f32 startPosZ = mBox.i.z + unitSizeZ / 2;
 
 	for (int x = 0; x < mGridSizeX; x++) {
 		pos.x = unitSizeX * f32(x) + startPosX;
 		for (int z = 0; z < mGridSizeZ; z++) {
 			pos.z = unitSizeZ * f32(z) + startPosZ;
 
-			mList.setNextLink();
+			PSSystem::IdLink* link = mList.setNextLink();
 
-			EnvSe_Perspective* se = newSeObj(mList.mNextLink->mId, volume, pos);
+			EnvSe_Perspective* se = newSeObj(link->mId, volume, pos);
 			P2ASSERTLINE(662, se);
 			onBuild(se);
 			mgr->mEnvList.append(se);

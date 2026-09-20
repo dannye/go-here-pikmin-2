@@ -3,7 +3,6 @@
 #include "Game/generalEnemyMgr.h"
 #include "efx/TKage.h"
 #include "PSSystem/PSMainSide_ObjSound.h"
-#include "PSM/EnemyBoss.h"
 #include "Game/MapMgr.h"
 #include "Game/pathfinder.h"
 #include "Game/routeMgr.h"
@@ -14,7 +13,7 @@
 #include "PSSystem/PSGame.h"
 #include "PSSystem/PSScene.h"
 #include "PSM/Scene.h"
-#include "PSSystem/Seq.h"
+#include "PSSystem/PSSeq.h"
 #include "Game/MoviePlayer.h"
 #include "JSystem/J3D/J3DTexMtx.h"
 #include "Game/EnemyAnimKeyEvent.h"
@@ -366,7 +365,7 @@ void Obj::doUpdate()
 					getPosition2D(pos);
 					Vector3f naviPos = Vector3f(activeNavi->getPosition().x, 0.0f, activeNavi->getPosition().z);
 
-					f32 sqrDist = sqrDistanceXZ(naviPos, pos);
+					f32 sqrDist = naviPos.sqrDistance2D(pos);
 					if (isFinalFloor()) {
 						f32 fallRadius = C_PARMS->mFallRadius;
 						if (sqrDist < SQUARE(fallRadius)) {
@@ -532,7 +531,9 @@ void Obj::onKill(Game::CreatureKillArg* arg)
 {
 	EnemyBase::onKill(arg);
 	releasePathFinder();
+#if !defined(VERSION_JP)
 	fadeFlickEffect();
+#endif
 }
 
 /**
@@ -557,7 +558,9 @@ void Obj::doStartStoneState()
 	mCollTree->getCollPart('head')->mSpecialID = 'st__';
 
 	fadeTraceEffect();
+#if !defined(VERSION_JP)
 	fadeFlickEffect();
+#endif
 }
 
 /**
@@ -874,7 +877,7 @@ void Obj::walkFunc()
 
 			bool isAnimEnd = false;
 
-			f32 sqrDist = sqrDistanceXZ(mPosition, naviPosition);
+			f32 sqrDist = mPosition.sqrDistance2D(naviPosition);
 
 			if (mCurAnim->mIsPlaying && mCurAnim->mType == KEYEVENT_END) {
 				isAnimEnd = true;
@@ -926,7 +929,7 @@ void Obj::walkFunc()
 	} else if (ItemOnyon::mgr && ItemOnyon::mgr->mPod) {
 		Vector3f podPos = ItemOnyon::mgr->mPod->getPosition();
 		bool isAnimEnd  = false;
-		f32 sqrDist     = sqrDistanceXZ(mPosition, podPos);
+		f32 sqrDist     = mPosition.sqrDistance2D(podPos);
 
 		if (mCurAnim->mIsPlaying && mCurAnim->mType == KEYEVENT_END) {
 			isAnimEnd = true;
@@ -993,7 +996,7 @@ void Obj::walkFunc()
 	if (mRouteFindTimer == 0) {
 		mRouteFindCooldownTimer++;
 		if (mRouteFindCooldownTimer > 60) {
-			if (sqrDistanceXZ(mPosition, mNextRoutePos) < SQUARE(10.0f)) {
+			if (mPosition.sqrDistance2D(mNextRoutePos) < SQUARE(10.0f)) {
 				mRouteFindTimer = 120;
 				findNextRoutePoint();
 			}
@@ -1659,7 +1662,7 @@ lbl_803A8B4C:
  */
 bool Obj::isReachToGoal(f32 rad)
 {
-	return (u8)(sqrDistanceXZ(mPosition, mTargetPosition) < SQUARE(rad));
+	return (u8)(mPosition.sqrDistance2D(mTargetPosition) < SQUARE(rad));
 }
 
 /**
@@ -1722,7 +1725,11 @@ void Obj::findNextRoutePoint()
 
 	WayPoint* currWP = routeMgr->getWayPoint(mCurrentWaypointIndex);
 
+#if defined(VERSION_JP)
+	P2ASSERTLINE(1552, currWP);
+#else
 	P2ASSERTLINE(1557, currWP);
+#endif
 
 	int counter = 0;
 	s16 indices[8];
@@ -1786,7 +1793,7 @@ void Obj::findNextRoutePoint()
 						Vector3f* wpPosPtr2 = &wp->getPosition();
 						Vector3f pikiPos    = Vector3f(piki->getPosition().x, 0.0f, piki->getPosition().z);
 
-						f32 sqrDist = sqrDistanceXZ(pikiPos, wpPos);
+						f32 sqrDist = pikiPos.sqrDistance2D(wpPos);
 						if (sqrDist < minDist) {
 							minDist = sqrDist;
 							val     = i;
@@ -1802,7 +1809,7 @@ void Obj::findNextRoutePoint()
 					Vector3f wpPos2     = wpPos;
 					Vector3f* wpPosPtr2 = &wpPos2;
 					Vector3f naviPos    = Vector3f(activeNavi->getPosition().x, 0.0f, activeNavi->getPosition().z);
-					f32 sqrDist         = sqrDistanceXZ(naviPos, wpPos);
+					f32 sqrDist         = naviPos.sqrDistance2D(wpPos);
 					if (sqrDist < minDist) {
 						minDist = sqrDist;
 						val     = i;
@@ -3043,7 +3050,11 @@ void Obj::findNextTraceRoutePoint()
 		return;
 	}
 
+#if defined(VERSION_JP)
+	JUT_PANICLINE(1833, "failed traceRoutePoint\n");
+#else
 	JUT_PANICLINE(1838, "failed traceRoutePoint\n");
+#endif
 }
 
 /**
@@ -3056,7 +3067,11 @@ bool Obj::isEndPathFinder()
 		return true;
 	}
 
+#if defined(VERSION_JP)
+	P2ASSERTLINE(1845, testPathfinder);
+#else
 	P2ASSERTLINE(1850, testPathfinder);
+#endif
 
 	switch (testPathfinder->check(mPathFindingHandle)) {
 	case PATHFIND_MakePath:
@@ -3074,7 +3089,11 @@ bool Obj::isEndPathFinder()
 		return false;
 
 	case PATHFIND_NoHandle:
+#if defined(VERSION_JP)
+		JUT_PANICLINE(1865, "no handle pathFinder\n");
+#else
 		JUT_PANICLINE(1870, "no handle pathFinder\n");
+#endif
 		mFoundPath = 0;
 		return false;
 	}
@@ -3091,14 +3110,18 @@ bool Obj::setPathFinder(bool check)
 	releasePathFinder();
 	WPEdgeSearchArg edgeArg(mPosition);
 	RouteMgr* routeMgr = mapMgr->mRouteMgr;
+#if defined(VERSION_JP)
+	P2ASSERTLINE(1888, routeMgr);
+#else
 	P2ASSERTLINE(1893, routeMgr);
+#endif
 
 	if (routeMgr->getNearestEdge(edgeArg)) {
 		Vector3f wp1Pos  = edgeArg.mWp1->mPosition;
 		Vector3f wp2Pos  = edgeArg.mWp2->mPosition;
 		Vector3f homePos = mHomePosition;
-		f32 wp2Dist      = sqrDistanceXZ(wp2Pos, homePos);
-		f32 wp1Dist      = sqrDistanceXZ(wp1Pos, homePos);
+		f32 wp2Dist      = wp2Pos.sqrDistance2D(homePos);
+		f32 wp1Dist      = wp1Pos.sqrDistance2D(homePos);
 		s16 idx1         = edgeArg.mWp1->mIndex;
 		s16 idx2         = edgeArg.mWp2->mIndex;
 		if (wp1Dist > wp2Dist) {
@@ -3126,7 +3149,11 @@ bool Obj::setPathFinder(bool check)
 		return true;
 	}
 
+#if defined(VERSION_JP)
+	JUT_PANICLINE(1929, nullptr);
+#else
 	JUT_PANICLINE(1934, nullptr);
+#endif
 	return false;
 	/*
 	stwu     r1, -0x50(r1)
@@ -3343,8 +3370,8 @@ void Obj::jointMtxCalc(int jointIdx)
 	if (jointIdx < 2 && C_PARMS->mUseTyreForJointCalc) {
 		f32 sinVal1 = C_PARMS->mArmRotationA * absF(sinf(mTyre->mCurrentRotation2)); // f23
 		f32 sinVal2 = C_PARMS->mArmRotationB * absF(sinf(mTyre->mCurrentRotation2)); // f24
-		vec2.y = sinVal2;
-		getStateID();                                                                // unused
+		vec2.y      = sinVal2;
+		getStateID(); // unused
 
 		if (mTyre->mCurrentRotation2 < 0.0f) {
 			if (jointIdx == 0) {
@@ -4078,7 +4105,11 @@ void Obj::moveRestart()
 		PSSystem::validateSceneMgr(mgr);
 		mgr->checkScene();
 		PSSystem::SeqBase* seqBase = PSSystem::getSeqData(mgr, 1);
+#if defined(VERSION_JP)
+		P2ASSERTLINE(2216, seqBase);
+#else
 		P2ASSERTLINE(2221, seqBase);
+#endif
 		seqBase->startSeq();
 		mHasStartedChaseBgm = true;
 	}

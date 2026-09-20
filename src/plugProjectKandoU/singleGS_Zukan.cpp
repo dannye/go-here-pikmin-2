@@ -22,7 +22,7 @@
 #include "PSSystem/PSGame.h"
 #include "PSM/ObjMgr.h"
 #include "PSSystem/PSSystemIF.h"
-#include "PSGame/SceneInfo.h"
+#include "PSGame/PikScene.h"
 #include "PSM/Scene.h"
 #include "Splitter.h"
 #include "nans.h"
@@ -1232,10 +1232,8 @@ void ZukanState::init(SingleGameSection* game, StateArg* arg)
 	gameSystem->mTimeMgr->resetFlag(1);
 }
 
-static const char* modeNames[9]
+static const char* const modeNames[9]
     = { "StartTeki", "StartPellet", "ModeChangeToTeki", "Teki", "ChangeTeki", "ModeChangeToPellet", "Pellet", "ChangePellet", "None" };
-// supposed to be pointers to the above strings, but I cant get that to work, this fixes the size of rodata for now
-static const u32 dumb[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /**
  * @note Address: N/A
@@ -1243,7 +1241,15 @@ static const u32 dumb[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
  */
 void ZukanState::startTekiMode(bool)
 {
-	// UNUSED FUNCTION
+	setMode(ModeChangeToTeki);
+	Morimura::DispMemberZukanEnemy disp;
+	disp.mDebugExpHeap  = mExtraHeapFor2D;
+	disp.mTexture       = mTexture2;
+	disp.mEnemyTexMgr   = mEnemyTexMgr;
+	disp.mResultTexMgr  = mResultTexture;
+	disp.mPrevSelection = &_110;
+	Screen::gGame2DMgr->open_ZukanEnemy(disp);
+	startWipe(0.0f);
 }
 
 /**
@@ -1252,7 +1258,15 @@ void ZukanState::startTekiMode(bool)
  */
 void ZukanState::startPelletMode(bool)
 {
-	// UNUSED FUNCTION
+	setMode(ModeChangeToPellet);
+	Morimura::DispMemberZukanItem disp;
+	disp.mDebugExpHeap  = mExtraHeapFor2D;
+	disp.mTexture       = mTexture2;
+	disp.mEnemyTexMgr   = mEnemyTexMgr;
+	disp.mResultTexMgr  = mResultTexture;
+	disp.mPrevSelection = &_114;
+	Screen::gGame2DMgr->open_ZukanItem(disp);
+	startWipe(0.0f);
 }
 
 /**
@@ -1309,15 +1323,7 @@ void ZukanState::exec(SingleGameSection* game)
 		case ModeChangeTeki:
 			bool test = false;
 			if (Screen::gGame2DMgr->isZukanEnemy()) {
-				setMode(ModeChangeToPellet);
-				Morimura::DispMemberZukanItem disp;
-				disp.mDebugExpHeap  = mExtraHeapFor2D;
-				disp.mTexture       = mTexture2;
-				disp.mEnemyTexMgr   = mEnemyTexMgr;
-				disp.mResultTexMgr  = mResultTexture;
-				disp.mPrevSelection = &_114;
-				Screen::gGame2DMgr->open_ZukanItem(disp);
-				startWipe(0.0f);
+				startPelletMode(true);
 				test = true;
 			}
 			if (test) {
@@ -1331,15 +1337,7 @@ void ZukanState::exec(SingleGameSection* game)
 		case ModeChangePellet:
 			test = false;
 			if (Screen::gGame2DMgr->isZukanItem()) {
-				setMode(ModeChangeToTeki);
-				Morimura::DispMemberZukanEnemy disp;
-				disp.mDebugExpHeap  = mExtraHeapFor2D;
-				disp.mTexture       = mTexture2;
-				disp.mEnemyTexMgr   = mEnemyTexMgr;
-				disp.mResultTexMgr  = mResultTexture;
-				disp.mPrevSelection = &_110;
-				Screen::gGame2DMgr->open_ZukanEnemy(disp);
-				startWipe(0.0f);
+				startTekiMode(true);
 				test = true;
 			}
 			if (test) {
@@ -1365,28 +1363,12 @@ void ZukanState::exec(SingleGameSection* game)
 
 			// start teki
 			if (mCurrMode == ModeStartTeki) {
-				setMode(ModeChangeToTeki);
-				Morimura::DispMemberZukanEnemy disp;
-				disp.mDebugExpHeap  = mExtraHeapFor2D;
-				disp.mTexture       = mTexture2;
-				disp.mEnemyTexMgr   = mEnemyTexMgr;
-				disp.mResultTexMgr  = mResultTexture;
-				disp.mPrevSelection = &_110;
-				Screen::gGame2DMgr->open_ZukanEnemy(disp);
-				startWipe(0.0f);
+				startTekiMode(true);
 				return;
 			}
 
 			// start pellet
-			setMode(ModeChangeToPellet);
-			Morimura::DispMemberZukanItem disp;
-			disp.mDebugExpHeap  = mExtraHeapFor2D;
-			disp.mTexture       = mTexture2;
-			disp.mEnemyTexMgr   = mEnemyTexMgr;
-			disp.mResultTexMgr  = mResultTexture;
-			disp.mPrevSelection = &_114;
-			Screen::gGame2DMgr->open_ZukanItem(disp);
-			startWipe(0.0f);
+			startPelletMode(true);
 			return;
 		}
 
@@ -2091,7 +2073,7 @@ void ZukanState::execTeki(SingleGameSection* game)
 			velocity.normalise();
 
 			Vector3f yAxis(0.0f, 1.0f, 0.0f);
-			Vector3f perpVec = cross(velocity, yAxis);
+			Vector3f perpVec = velocity.cross(yAxis);
 			perpVec *= mDebugParms->_1C[1];
 			position += perpVec;
 			position.y += mDebugParms->_1C[2];
@@ -2885,20 +2867,20 @@ void ZukanState::drawGradationEffect(SingleGameSection*, Graphics& gfx)
 	for (int i = 0; i < 4; i++) {
 		J2DPicture pic(tex);
 		JUtility::TColor color(255, 255, 255, 127);
-		pic.setCornerColor(color);
+		pic.setCornerColor(color, color, color, color);
 		GXSetAlphaUpdate(GX_FALSE);
 		pic.draw(min, min, mWindowBounds.getWidth(), mWindowBounds.getHeight(), false, false, false);
 
 		color.a -= 16;
-		pic.setCornerColor(color);
+		pic.setCornerColor(color, color, color, color);
 		pic.draw(max, min, mWindowBounds.getWidth(), mWindowBounds.getHeight(), false, false, false);
 
 		color.a -= 16;
-		pic.setCornerColor(color);
+		pic.setCornerColor(color, color, color, color);
 		pic.draw(min, max, mWindowBounds.getWidth(), mWindowBounds.getHeight(), false, false, false);
 
 		color.a -= 16;
-		pic.setCornerColor(color);
+		pic.setCornerColor(color, color, color, color);
 		pic.draw(max, max, mWindowBounds.getWidth(), mWindowBounds.getHeight(), false, false, false);
 
 		GXInvalidateTexAll();
@@ -3969,7 +3951,13 @@ void ZukanState::dvdloadA()
 	mMainHeap = JKRExpHeap::create(mParentHeap->getFreeSize(), mParentHeap, true);
 	mMainHeap->becomeCurrentHeap();
 	char path[PATH_MAX]; // 0x160
+#if defined(VERSION_JP)
+	sprintf(path, "user/Yamashita/zukan/%s/%s/arc.szs", "jpn", sDirName[mMapIndex]);
+#elif defined(VERSION_PAL)
+	sprintf(path, "user/Yamashita/zukan/%s/%s/arc.szs", "pal", sDirName[mMapIndex]);
+#else
 	sprintf(path, "user/Yamashita/zukan/%s/%s/arc.szs", "us", sDirName[mMapIndex]);
+#endif
 	JKRArchive* arc = JKRMountArchive(path, JKRArchive::EMM_Mem, nullptr, JKRArchive::EMD_Tail);
 	P2ASSERTLINE(2457, arc);
 	mParms = new IllustratedBook::Parms;
@@ -4036,8 +4024,8 @@ void ZukanState::dvdloadA()
 	info.mCam1Position[0] = mCamera->getSoundPositionPtr();
 	info.mCam2Position[0] = mCamera->getSoundPositionPtr();
 	info.mCameraMtx[0]    = mCamera->getSoundMatrixPtr();
-	info.mBounds.mMin.set(-1000.0f, -1000.0f, -1000.0f);
-	info.mBounds.mMax.set(1000.0f, 1000.0f, 1000.0f);
+	info.mBounds.i.set(-1000.0f, -1000.0f, -1000.0f);
+	info.mBounds.f.set(1000.0f, 1000.0f, 1000.0f);
 	info.setStageFlag(PSGame::SceneInfo::SCENEFLAG_Unk0, PSGame::SceneInfo::SFBS_1);
 	info.mSceneType = PSGame::SceneInfo::PIKLOPEDIA;
 

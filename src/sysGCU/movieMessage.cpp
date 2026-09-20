@@ -139,7 +139,7 @@ AbtnPane::AbtnPane(u8 state)
 	mState       = state;
 	mAnimAlpha   = 0.0f;
 	mAppearAlpha = 0.0f;
-	mAnimAlpha   = -0.0f;
+	mAnimAlpha   = -(state / 255.0f);
 }
 
 /**
@@ -204,8 +204,6 @@ PodIconScreen::PodIconScreen()
 	u16 y = sys->getRenderModeHeight();
 	u16 x = sys->getRenderModeWidth();
 	mInitialPos.set(x * 0.75f, y, 100.0f);
-	reset();
-	hide();
 }
 
 /**
@@ -228,7 +226,7 @@ void PodIconScreen::setTrans()
 void PodIconScreen::reset()
 {
 	mMomentum.set(1.0f, randFloat(), 0.0f);
-	mMomentum.normalise(); // Needs to be here, but we are reaching limits of inline complexity
+	mMomentum.normalise();
 	mPosition.set(0.0f, 0.0f, 0.0f);
 	setTrans();
 }
@@ -237,6 +235,37 @@ void PodIconScreen::reset()
  * @note Address: N/A
  * @note Size: 0x1E0
  */
+void PodIconScreen::disappear()
+{
+	switch (int(randFloat() * 2.0f)) {
+	case 0: {
+		_GXRenderModeObj* renderObj = System::getRenderModeObj();
+		u16 efbHeight               = renderObj->efbHeight;
+		renderObj                   = System::getRenderModeObj();
+		u16 fbWidth                 = renderObj->fbWidth;
+		mPosition.x                 = (randFloat() * 0.5f + 0.3f) * fbWidth;
+		mPosition.y                 = -efbHeight * 1.25f;
+		mPosition.z                 = 100.0f;
+		break;
+	}
+	case 1: {
+		_GXRenderModeObj* renderObj = System::getRenderModeObj();
+		u16 efbHeight               = renderObj->efbHeight;
+		renderObj                   = System::getRenderModeObj();
+		u16 fbWidth                 = renderObj->fbWidth;
+		mPosition.x                 = (randFloat() * 0.5f + 0.3f) * fbWidth;
+		mPosition.y                 = efbHeight * 0.65f;
+		mPosition.z                 = 100.0f;
+	}
+	}
+	f32 momentumY = randFloat();
+	mMomentum.x   = randFloat() * 0.5f + 0.5f;
+	mMomentum.y   = momentumY;
+	mMomentum.z   = 0.0f;
+	mMomentum.normalise();
+	mState = 2;
+}
+
 void PodIconScreen::set(JKRArchive* arc)
 {
 	bool didLoad = J2DScreen::set("pod.blo", 0x40000, arc);
@@ -711,13 +740,20 @@ bool TControl::onInit()
 
 	sys->heapStatusStart("podIcon", nullptr);
 
-	char* path = "new_screen/cmn/pod_for_message_window.szs";
+	char* path;
 	if (Game::playData->isStoryFlag(Game::STORY_DebtPaid)) {
 		path = "new_screen/cmn/gold_pod_for_message_window.szs";
+	} else {
+		path = "new_screen/cmn/pod_for_message_window.szs";
 	}
 	arc = JKRMountArchive(path, JKRArchive::EMM_Mem, nullptr, JKRArchive::EMD_Head);
 	if (arc) {
-		mPodIcon = new PodIconScreen;
+		PodIconScreen* podIcon = new PodIconScreen;
+		if (podIcon) {
+			podIcon->reset();
+			podIcon->hide();
+		}
+		mPodIcon = podIcon;
 		mPodIcon->set(arc);
 	} else {
 		JUT_PANICLINE(658, "%s is not found.\n", path);

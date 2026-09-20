@@ -12,121 +12,30 @@ J3DMtxCalc* J3DJoint::mCurrentMtxCalc;
 /**
  * @note Address: 0x8006B200
  * @note Size: 0x98
- * init__25J3DMtxCalcJ3DSysInitBasicFRC3VecRA3_A4_Cf
  */
 void J3DMtxCalcJ3DSysInitBasic::init(const Vec& scale, const Mtx& mtx)
 {
+	Vec& inputScale   = const_cast<Vec&>(scale);
 	J3DSys::mCurrentS = scale;
 	J3DSys::mParentS  = (Vec) { 1.0f, 1.0f, 1.0f };
-	JMAMTXApplyScale(mtx, J3DSys::mCurrentMtx, scale.x, scale.y, scale.z);
-	/*
-	stwu     r1, -0x20(r1)
-	mflr     r0
-	mr       r9, r3
-	lis      r5, lbl_804789B0@ha
-	stw      r0, 0x24(r1)
-	addi     r6, r5, lbl_804789B0@l
-	lfs      f1, 0(r9)
-	lis      r8, mCurrentS__6J3DSys@ha
-	lwz      r0, 0(r6)
-	lis      r5, mParentS__6J3DSys@ha
-	lwz      r7, 4(r6)
-	lis      r3, mCurrentMtx__6J3DSys@ha
-	stw      r0, 8(r1)
-	addi     r0, r3, mCurrentMtx__6J3DSys@l
-	lwz      r6, 8(r6)
-	mr       r3, r4
-	stw      r7, 0xc(r1)
-	mr       r4, r0
-	lfs      f5, 8(r1)
-	stw      r6, 0x10(r1)
-	lfs      f2, 4(r9)
-	stfsu    f1, mCurrentS__6J3DSys@l(r8)
-	lfs      f3, 8(r9)
-	stfs     f2, 4(r8)
-	lfs      f4, 0xc(r1)
-	stfsu    f5, mParentS__6J3DSys@l(r5)
-	lfs      f0, 0x10(r1)
-	stfs     f3, 8(r8)
-	lfs      f1, 0(r9)
-	lfs      f2, 4(r9)
-	lfs      f3, 8(r9)
-	stfs     f4, 4(r5)
-	stfs     f0, 8(r5)
-	bl       JMAMTXApplyScale__FPA4_CfPA4_ffff
-	lwz      r0, 0x24(r1)
-	mtlr     r0
-	addi     r1, r1, 0x20
-	blr
-	*/
+	JMAMTXApplyScale(mtx, J3DSys::mCurrentMtx, inputScale.x, inputScale.y, inputScale.z);
 }
 
 /**
  * @note Address: 0x8006B298
  * @note Size: 0x98
- * init__24J3DMtxCalcJ3DSysInitMayaFRC3VecRA3_A4_Cf
  */
 void J3DMtxCalcJ3DSysInitMaya::init(const Vec& scale, const Mtx& mtx)
 {
-	J3DSys::mCurrentS = scale;
+	Vec& inputScale   = const_cast<Vec&>(scale);
 	J3DSys::mParentS  = (Vec) { 1.0f, 1.0f, 1.0f };
-	JMAMTXApplyScale(mtx, J3DSys::mCurrentMtx, scale.x, scale.y, scale.z);
-
-	/*
-	stwu     r1, -0x20(r1)
-	mflr     r0
-	mr       r9, r3
-	lis      r5, lbl_804789BC@ha
-	stw      r0, 0x24(r1)
-	addi     r7, r5, lbl_804789BC@l
-	lfs      f5, 0(r9)
-	lis      r5, mCurrentS__6J3DSys@ha
-	lwz      r0, 0(r7)
-	lis      r6, mParentS__6J3DSys@ha
-	lwz      r8, 4(r7)
-	lis      r3, mCurrentMtx__6J3DSys@ha
-	stw      r0, 8(r1)
-	addi     r0, r3, mCurrentMtx__6J3DSys@l
-	lwz      r7, 8(r7)
-	mr       r3, r4
-	stw      r8, 0xc(r1)
-	mr       r4, r0
-	lfs      f1, 8(r1)
-	stw      r7, 0x10(r1)
-	lfs      f2, 0xc(r1)
-	stfsu    f1, mParentS__6J3DSys@l(r6)
-	lfs      f3, 0x10(r1)
-	stfs     f2, 4(r6)
-	lfs      f4, 4(r9)
-	stfsu    f5, mCurrentS__6J3DSys@l(r5)
-	lfs      f0, 8(r9)
-	stfs     f3, 8(r6)
-	lfs      f1, 0(r9)
-	lfs      f2, 4(r9)
-	lfs      f3, 8(r9)
-	stfs     f4, 4(r5)
-	stfs     f0, 8(r5)
-	bl       JMAMTXApplyScale__FPA4_CfPA4_ffff
-	lwz      r0, 0x24(r1)
-	mtlr     r0
-	addi     r1, r1, 0x20
-	blr
-	*/
-}
-
-inline s32 checkScaleOne(const Vec& vec)
-{
-	if (vec.x == 1.0f && vec.y == 1.0f && vec.z == 1.0f) {
-		return true;
-	} else {
-		return false;
-	}
+	J3DSys::mCurrentS = scale;
+	JMAMTXApplyScale(mtx, J3DSys::mCurrentMtx, inputScale.x, inputScale.y, inputScale.z);
 }
 
 /**
  * @note Address: 0x8006B330
  * @note Size: 0x118
- * calcTransform__28J3DMtxCalcCalcTransformBasicFRC16J3DTransformInfo
  */
 void J3DMtxCalcCalcTransformBasic::calcTransform(const J3DTransformInfo& transInfo)
 {
@@ -154,7 +63,6 @@ void J3DMtxCalcCalcTransformBasic::calcTransform(const J3DTransformInfo& transIn
 /**
  * @note Address: 0x8006B448
  * @note Size: 0x168
- * calcTransform__32J3DMtxCalcCalcTransformSoftimageFRC16J3DTransformInfo
  */
 void J3DMtxCalcCalcTransformSoftimage::calcTransform(const J3DTransformInfo& transInfo)
 {
@@ -288,7 +196,6 @@ lbl_8006B59C:
 /**
  * @note Address: 0x8006B5B0
  * @note Size: 0x178
- * calcTransform__27J3DMtxCalcCalcTransformMayaFRC16J3DTransformInfo
  */
 void J3DMtxCalcCalcTransformMaya::calcTransform(const J3DTransformInfo& transInfo)
 {
@@ -335,7 +242,6 @@ void J3DMtxCalcCalcTransformMaya::calcTransform(const J3DTransformInfo& transInf
 /**
  * @note Address: 0x8006B728
  * @note Size: 0x104
- * J3DNewMtxCalcAnm__FUlP15J3DAnmTransform
  */
 J3DMtxCalcAnmBase* J3DNewMtxCalcAnm(u32 type, J3DAnmTransform* p2)
 {
@@ -355,15 +261,6 @@ J3DMtxCalcAnmBase* J3DNewMtxCalcAnm(u32 type, J3DAnmTransform* p2)
 }
 
 /**
- * @note Address: 0x8006B82C
- * @note Size: 0x5C
- * __dt__17J3DMtxCalcAnmBaseFv
- */
-J3DMtxCalcAnmBase::~J3DMtxCalcAnmBase()
-{
-}
-
-/**
  * @note Address: 0x8006B888
  * @note Size: 0x34
  */
@@ -380,14 +277,9 @@ void J3DJoint::appendChild(J3DJoint* newChild)
 	}
 }
 
-struct copyhelper {
-	u32 x[8];
-};
-
 /**
  * @note Address: 0x8006B8BC
  * @note Size: 0xFC
- * __ct__8J3DJointFv
  */
 J3DJoint::J3DJoint()
 {
@@ -399,11 +291,10 @@ J3DJoint::J3DJoint()
 	mJointIdx         = 0;
 	mKind             = 1;
 	mScaleCompensate  = false;
-	// "This line is probably a fake match but the normal = works nothing like this." - TP
-	*(copyhelper*)&mTransformInfo = *(copyhelper*)&j3dDefaultTransformInfo;
-	mBoundingSphereRadius         = 0.0f;
-	mMtxCalc                      = nullptr;
-	mMaterial                     = nullptr;
+	FAST_COPY(&mTransformInfo, &j3dDefaultTransformInfo, sizeof(J3DTransformInfo));
+	mBoundingSphereRadius = 0.0f;
+	mMtxCalc              = nullptr;
+	mMaterial             = nullptr;
 
 	JGeometry::TVec3f init  = { 0.0f, 0.0f, 0.0f };
 	mMin                    = init;
