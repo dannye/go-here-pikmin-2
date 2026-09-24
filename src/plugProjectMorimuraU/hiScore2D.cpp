@@ -224,7 +224,7 @@ void THiScore::doCreate(JKRArchive* arc)
 	if (disp->isID(OWNER_MRMR, MEMBER_HIGH_SCORE)) {
 		mDisp = disp;
 		P2ASSERTLINE(287, mDisp);
-		mIsAllTreasures = sys->getPlayCommonData()->mChallengeFlags.isSet(2);
+		mIsAllTreasures = sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_AllTreasures);
 	} else {
 		mDisp      = new DispMemberHighScore;
 		mIsSection = true;
@@ -583,6 +583,7 @@ bool THiScore::doUpdate()
 		}
 		mCornerSelScale = mCornerSelScaleModifier * sinf(mCornerAnimTimer) + 0.85f;
 
+		f32 x, y;
 		f32 paneHeight = 0.0f;
 		J2DPane* pane  = mIndexPaneList[mCurrActiveRowSel]->mPane->getFirstChildPane();
 		if (mIsAllTreasures) {
@@ -591,7 +592,6 @@ bool THiScore::doUpdate()
 		}
 		pane->setBasePosition(J2DPOS_Center);
 		for (u8 i = 0; i < 4; i++) {
-			f32 y, x;
 			switch (i) {
 			case 0:
 				x = -20.0f;
@@ -1495,7 +1495,7 @@ void THiScore::changePaneInfo()
 		mMainScreen->mScreenObj->search('Notakara')->show();
 	} else {
 		mHighScorePic->show();
-		if (!mIsSection && !(sys->getPlayCommonData()->mChallengeFlags.isSet(1))) {
+		if (!mIsSection && !(sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_DebtRepayed))) {
 			mHighScorePic->hide();
 		}
 		mMainScreen->mScreenObj->search('Notakara')->hide();
@@ -1644,7 +1644,7 @@ int THiScore::getRecord(int type, int id)
 		if (debug) {
 			return 1.0f + 10.0f * randFloat();
 		}
-		if (sys->getPlayCommonData()->mChallengeFlags.isSet(1)) {
+		if (sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_DebtRepayed)) {
 			return sys->getPlayCommonData()->getHighscore_clear(orderID)->getScore(0);
 		}
 		return -1;
@@ -1653,7 +1653,7 @@ int THiScore::getRecord(int type, int id)
 		if (debug) {
 			return 10.0f + 100.0f * randFloat();
 		}
-		if (sys->getPlayCommonData()->mChallengeFlags.isSet(1)) {
+		if (sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_DebtRepayed)) {
 			return sys->getPlayCommonData()->getHighscore_clear(orderID)->getScore(1);
 		}
 		return -1;
@@ -1665,7 +1665,7 @@ int THiScore::getRecord(int type, int id)
 			}
 			return 110.0f + 1000.0f * randFloat();
 		}
-		if (sys->getPlayCommonData()->mChallengeFlags.isSet(1)) {
+		if (sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_DebtRepayed)) {
 			return sys->getPlayCommonData()->getHighscore_clear(orderID)->getScore(2);
 		}
 		return -1;
@@ -1674,7 +1674,7 @@ int THiScore::getRecord(int type, int id)
 		if (debug) {
 			return 10.f + 100.0f * randFloat();
 		}
-		if (sys->getPlayCommonData()->mChallengeFlags.isSet(1)) {
+		if (sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_DebtRepayed)) {
 			return sys->getPlayCommonData()->getHighscore_complete(orderID)->getScore(0);
 		}
 		return -1;
@@ -1683,7 +1683,7 @@ int THiScore::getRecord(int type, int id)
 		if (debug) {
 			return 110.0f + 100.0f * randFloat();
 		}
-		if (sys->getPlayCommonData()->mChallengeFlags.isSet(1)) {
+		if (sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_DebtRepayed)) {
 			return sys->getPlayCommonData()->getHighscore_complete(orderID)->getScore(1);
 		}
 		return -1;
@@ -1692,7 +1692,7 @@ int THiScore::getRecord(int type, int id)
 		if (debug) {
 			return 1100.0f + 100000.0f * randFloat();
 		}
-		if (sys->getPlayCommonData()->mChallengeFlags.isSet(1)) {
+		if (sys->getPlayCommonData()->mCommonStoryFlags.isSet(Game::PlayCommonData::CommonData_DebtRepayed)) {
 			return sys->getPlayCommonData()->getHighscore_complete(orderID)->getScore(2);
 		}
 		return -1;
@@ -1710,8 +1710,10 @@ int THiScore::getRecord(int type, int id)
  */
 void THiScore::changeTextTevBlock(int id)
 {
+	int r0, g0, b0, a0;
+	int r1, g1, b1, a1;
 	J2DTextBox* textbox  = static_cast<J2DTextBox*>(mIndexPaneList[id]->getSubPane()->getFirstChildPane()); // r29
-	f32 val              = mIndexGroup->mScrollOffset + mIndexPaneList[id]->mYOffset;
+	f32 val              = mIndexGroup->getScrollOffset() + mIndexPaneList[id]->mYOffset;
 	J2DTextBox* startBox = static_cast<J2DTextBox*>(mIndexPaneList[id]->getSubPane()); // r28
 
 	if (mIndexGroup->mStateID == TIndexGroup::IDGroup_Idle && val < mCursorSelectionYOffset && val > mSelectionYOffset) {
@@ -1728,17 +1730,22 @@ void THiScore::changeTextTevBlock(int id)
 
 		f32 tInv = 1.0f - t;
 
-		int r0 = (int)(tInv * (f32)mColors[2].r + t * (f32)mColors[0].r);
-		int g0 = (int)(tInv * (f32)mColors[2].g + t * (f32)mColors[0].g);
-		int b0 = (int)(tInv * (f32)mColors[2].b + t * (f32)mColors[0].b);
-		int a0 = (int)(tInv * (f32)mColors[2].a + t * (f32)mColors[0].a);
+		r0 = blendColorValue(t, tInv, (f32)mColors[2].r, (f32)mColors[0].r);
+		g0 = blendColorValue(t, tInv, (f32)mColors[2].g, (f32)mColors[0].g);
+		b0 = blendColorValue(t, tInv, (f32)mColors[2].b, (f32)mColors[0].b);
+		a0 = blendColorValue(t, tInv, (f32)mColors[2].a, (f32)mColors[0].a);
 
-		int r1 = (int)(tInv * (f32)mColors[3].r + t * (f32)mColors[1].r);
-		int g1 = (int)(tInv * (f32)mColors[3].g + t * (f32)mColors[1].g);
-		int b1 = (int)(tInv * (f32)mColors[3].b + t * (f32)mColors[1].b);
-		int a1 = (int)(tInv * (f32)mColors[3].a + t * (f32)mColors[1].a);
+		r1 = blendColorValue(t, tInv, (f32)mColors[3].r, (f32)mColors[1].r);
+		g1 = blendColorValue(t, tInv, (f32)mColors[3].g, (f32)mColors[1].g);
+		b1 = blendColorValue(t, tInv, (f32)mColors[3].b, (f32)mColors[1].b);
+		a1 = blendColorValue(t, tInv, (f32)mColors[3].a, (f32)mColors[1].a);
 
-		textbox->getMaterial()->getTevBlock()->setTevColor(0, J2DGXColorS10(r0, g0, b0, a0));
+		J2DGXColorS10 color0;
+		color0.r = r0;
+		color0.g = g0;
+		color0.b = b0;
+		color0.a = a0;
+		textbox->getMaterial()->getTevBlock()->setTevColor(0, color0);
 		textbox->getMaterial()->getTevBlock()->setTevColor(1, J2DGXColorS10(r1, g1, b1, a1));
 
 		changeColorBlock(mColorBlock[0], startBox->getMaterial()->getColorBlock());
