@@ -6,7 +6,6 @@
 #include "Game/MapMgr.h"
 #include "Game/Navi.h"
 #include "Game/PikiMgr.h"
-#include "PSM/EnemyBoss.h"
 #include "PSSystem/PSMainSide_ObjSound.h"
 #include "nans.h"
 
@@ -147,6 +146,7 @@ void StateAttack::init(EnemyBase* enemy, StateArg* stateArg)
  */
 void StateAttack::exec(EnemyBase* enemy)
 {
+	PSM::EnemyBoss* soundObj;
 	if (mDoCheckEat) {
 		int bombVal = OBJ(enemy)->eatBomb();
 		if (bombVal > mEatenBombs) {
@@ -199,8 +199,7 @@ void StateAttack::exec(EnemyBase* enemy)
 			Vector3f slotPos;
 			slot->getPosition(slotPos);
 			Vector3f naviPos = navi->getPosition();
-			Vector3f diff(slotPos.y - naviPos.y, slotPos.z - naviPos.z, slotPos.x - naviPos.x);
-			f32 len = _length2(diff);
+			f32 len          = slotPos.distance(naviPos);
 			if (len < slot->mRadius) {
 				InteractAttack attack(enemy, CG_GENERALPARMS(enemy).mAttackDamage.mValue, nullptr);
 				navi->stimulate(attack);
@@ -216,7 +215,7 @@ void StateAttack::exec(EnemyBase* enemy)
 
 		case KEYEVENT_2:
 			// this bit needs fixing
-			PSM::EnemyBoss* soundObj = static_cast<PSM::EnemyBoss*>(enemy->mSoundObj);
+			soundObj = static_cast<PSM::EnemyBoss*>(enemy->mSoundObj);
 			PSM::assertIsBoss(soundObj);
 			if (soundObj) {
 				soundObj->jumpRequest(PSM::EnemyMidBoss::BossBgm_Attack);
@@ -865,10 +864,11 @@ void StateFlick::exec(EnemyBase* enemy)
 			break;
 
 		case KEYEVENT_3:
-			f32 yMax         = 25.0f + OBJ(enemy)->mFootPosition.y;                                     // f31
-			f32 yMin         = yMax - 30.0f;                                     // f30
-			Vector3f footPos = OBJ(enemy)->mFootPosition;                                               // f28, na, f27
-			f32 trampleRange = SQUARE(CG_PROPERPARMS(enemy).mTramplingRange() * enemy->mScaleModifier); // f29
+			f32 yMax         = 25.0f + OBJ(enemy)->mFootPosition.y;                                  // f31
+			f32 yMin         = yMax - 30.0f;                                                         // f30
+			Vector3f footPos = OBJ(enemy)->mFootPosition;                                            // f28, na, f27
+			f32 trampleRange = CG_PROPERPARMS(enemy).mTramplingRange.mValue * enemy->mScaleModifier; // f29
+			trampleRange *= trampleRange;
 
 			Iterator<Piki> iterPiki(pikiMgr);
 
@@ -877,7 +877,7 @@ void StateFlick::exec(EnemyBase* enemy)
 				Piki* piki = *iterPiki;
 				if (piki->isAlive()) {
 					Vector3f pikiPos = piki->getPosition();
-					if (yMax > pikiPos.y && yMin < pikiPos.y && sqrDistanceXZ(footPos, pikiPos) < trampleRange) {
+					if (yMax > pikiPos.y && yMin < pikiPos.y && footPos.sqrDistance2D(pikiPos) < trampleRange) {
 						InteractPress pikiPress(enemy, CG_GENERALPARMS(enemy).mAttackDamage.mValue, nullptr);
 						piki->stimulate(pikiPress);
 					}
@@ -893,7 +893,7 @@ void StateFlick::exec(EnemyBase* enemy)
 				Navi* navi = *iterNavi;
 				if (navi->isAlive()) {
 					Vector3f naviPos = navi->getPosition();
-					if (yMax > naviPos.y && yMin < naviPos.y && sqrDistanceXZ(footPos, naviPos) < trampleRange) {
+					if (yMax > naviPos.y && yMin < naviPos.y && footPos.sqrDistance2D(naviPos) < trampleRange) {
 						InteractPress naviPress(enemy, CG_GENERALPARMS(enemy).mAttackDamage.mValue, nullptr);
 						navi->stimulate(naviPress);
 						naviCheck = false;

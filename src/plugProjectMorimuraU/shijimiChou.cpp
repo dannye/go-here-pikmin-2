@@ -396,57 +396,12 @@ void Obj::wallCallback(const MoveInfo& moveInfo)
 		if (getStateID() == SHIJIMICHOU_Fall) {
 			mIsFallVertical = true;
 		} else {
-			Vector3f pos    = mPosition;
-			mGoalPosition.x = 100.0f * moveInfo.mWallNormal.x + pos.x;
-			mGoalPosition.y = pos.y;
-			mGoalPosition.z = 100.0f * moveInfo.mWallNormal.z + pos.z;
+			Vector3f pos = mPosition;
+			pos.x += 100.0f * moveInfo.mWallNormal.x;
+			pos.z += 100.0f * moveInfo.mWallNormal.z;
+			mGoalPosition = pos;
 		}
 	}
-	/*
-	stwu     r1, -0x10(r1)
-	mflr     r0
-	stw      r0, 0x14(r1)
-	stw      r31, 0xc(r1)
-	mr       r31, r4
-	stw      r30, 8(r1)
-	mr       r30, r3
-	lwz      r5, gameSystem__4Game@sda21(r13)
-	cmplwi   r5, 0
-	beq      lbl_8038A76C
-	lwz      r0, 0x44(r5)
-	cmpwi    r0, 4
-	beq      lbl_8038A7B4
-
-lbl_8038A76C:
-	mr       r3, r30
-	bl       getStateID__Q24Game9EnemyBaseFv
-	cmpwi    r3, 2
-	bne      lbl_8038A788
-	li       r0, 1
-	stb      r0, 0x321(r30)
-	b        lbl_8038A7B4
-
-lbl_8038A788:
-	lfs      f2, 0x18c(r30)
-	lfs      f1, lbl_8051EF24@sda21(r2)
-	lfs      f0, 0x5c(r31)
-	lfs      f3, 0x190(r30)
-	fmadds   f2, f1, f0, f2
-	lfs      f4, 0x194(r30)
-	lfs      f0, 0x64(r31)
-	stfs     f2, 0x304(r30)
-	fmadds   f4, f1, f0, f4
-	stfs     f3, 0x308(r30)
-	stfs     f4, 0x30c(r30)
-
-lbl_8038A7B4:
-	lwz      r0, 0x14(r1)
-	lwz      r31, 0xc(r1)
-	lwz      r30, 8(r1)
-	mtlr     r0
-	addi     r1, r1, 0x10
-	blr
-	*/
 }
 
 /**
@@ -576,7 +531,7 @@ void Obj::fly()
 
 	mCurrentVelocity.y = 0.0f;
 
-	if (sqrDistanceXZ(mPosition, mGoalPosition) < 1000.0f) {
+	if (mPosition.sqrDistance2D(mGoalPosition) < 1000.0f) {
 		setNextGoal();
 		return;
 	}
@@ -594,8 +549,8 @@ void Obj::fly()
 		}
 
 		f32 sinVal        = (f32)sin(mYawRate);
-		sinVal            = C_PARMS->mRotateFaceDirFactor * sinVal;
-		f32 faceDirOffset = TORADIANS(sinVal);
+		f32 scaledSin     = C_PARMS->mRotateFaceDirFactor * sinVal;
+		f32 faceDirOffset = TORADIANS(scaledSin);
 		mFaceDir          = mTargetFaceDir;
 		turnToTarget(mGoalPosition, rotAccel, rotSpeed);
 
@@ -912,7 +867,7 @@ void Obj::restFly()
 
 	mCurrentVelocity.y = 0.0f;
 
-	if (sqrDistanceXZ(mPosition, mGoalPosition) < 1000.0f) {
+	if (mPosition.sqrDistance2D(mGoalPosition) < 1000.0f) {
 		setNextGoal();
 	} else {
 		EnemyFunc::walkToTarget(this, mGoalPosition, C_GENERALPARMS.mMoveSpeed(), C_GENERALPARMS.mTurnSpeed(),
@@ -949,14 +904,17 @@ bool Obj::checkRestOn()
 	Sys::Sphere collSphere;
 	static_cast<CollPart*>(mSpawningEnemy->mCollTree->mPart->mChild)->getSphere(collSphere);
 
-	f32 rad = collSphere.mRadius;
+	f32 dist;
+	f32 rad     = collSphere.mRadius;
+	f32 restRad = 1.2f * rad;
 
-	Vector3f positionSep = mPosition;
-	positionSep.sub(collSphere.mPosition);
+	f32 dx = mPosition.x - collSphere.mPosition.x;
+	f32 dy = mPosition.y - collSphere.mPosition.y;
+	f32 dz = mPosition.z - collSphere.mPosition.z;
 
-	f32 dist             = positionSep.sqrMagnitude();
+	dist                 = dx * dx + dy * dy + dz * dz;
 	mRestEnemyCollSphere = collSphere;
-	if (dist < SQUARE(1.2f * rad)) {
+	if (dist < SQUARE(restRad)) {
 		mTargetVelocity *= 0.0f;
 		mCurrentVelocity *= 0.0f;
 		hardConstraintOn();
@@ -993,8 +951,9 @@ bool Obj::checkRestOn()
 			return true;
 		}
 
+		f32 turnRate  = 0.3f;
 		f32 angleDist = getAngDist(collSphere.mPosition);
-		updateFaceDir(roundAng(angleDist * 0.3f + mFaceDir));
+		updateFaceDir(roundAng(angleDist * turnRate + mFaceDir));
 	}
 
 	return false;
@@ -1258,12 +1217,14 @@ bool Obj::checkRestOff()
 	static_cast<CollPart*>(mSpawningEnemy->mCollTree->mPart->mChild)->getSphere(collSphere);
 	f32 rad       = 2.0f * SQUARE(collSphere.mRadius);
 	Vector3f pos1 = mPosition;
-	Vector3f sep  = pos1 - collSphere.mPosition;
-	f32 dist      = sep.sqrMagnitude();
+	Vector3f spherePos(collSphere.mPosition.x, collSphere.mPosition.y, collSphere.mPosition.z);
+	Vector3f sep = mPosition - spherePos;
+	f32 dist     = sep.sqrMagnitude();
 
 	if (dist > rad) {
-		mPitchRate   = 0.0f;
-		Vector3f pos = mPosition;
+		Vector3f pos;
+		mPitchRate = 0.0f;
+		pos        = mPosition;
 		collSphere.mPosition -= mPosition;
 		collSphere.mPosition.normalise();
 		collSphere.mPosition *= 100.0f;
@@ -1272,7 +1233,7 @@ bool Obj::checkRestOff()
 		return true;
 	}
 
-	collSphere.mPosition -= pos1;
+	collSphere.mPosition = spherePos - pos1;
 	collSphere.mPosition.normalise();
 	collSphere.mPosition *= 2.0f;
 	mPosition -= collSphere.mPosition;
@@ -1492,7 +1453,7 @@ void Obj::resetRestPos()
 void Obj::leave()
 {
 	if (mGroupLeader && mGroupLeader != this && mGroupLeader->isAlive()) {
-		if (sqrDistanceXZ(mPosition, mGoalPosition) < 1000.0f) {
+		if (mPosition.sqrDistance2D(mGoalPosition) < 1000.0f) {
 			setTraceGoal();
 		}
 
@@ -1513,7 +1474,7 @@ void Obj::leave()
 		}
 
 		f32 val = mPitchAmp;
-		if (mPitchAmp < 0.0f) {
+		if (val < 0.0f) {
 			riseFactor = -1.0f;
 			mPitchRate += 0.05f;
 		} else {
@@ -1692,83 +1653,18 @@ void Obj::setTraceGoal()
 		mGroupLeader->getFaceDir(); // ?
 
 		f32 randVal = randFloat();
-		f32 factor  = (heightDiff > 0.0f) ? -randVal : randVal;
+		f32 factor  = randVal;
+		if (heightDiff > 0.0f) {
+			factor = -randVal;
+		}
 
-		f32 randDist = factor * heightDiff;
-		mGoalPosition.x += randDist;
+		Vector3f offset;
+		offset.x = factor * heightDiff;
+		offset.z = offset.x;
+		mGoalPosition.x += offset.x;
 		mGoalPosition.y += 10.0f * factor;
-		mGoalPosition.z += randDist;
+		mGoalPosition.z += offset.z;
 	}
-	/*
-	stwu     r1, -0x40(r1)
-	mflr     r0
-	stw      r0, 0x44(r1)
-	stfd     f31, 0x30(r1)
-	psq_st   f31, 56(r1), 0, qr0
-	stw      r31, 0x2c(r1)
-	mr       r31, r3
-	lwz      r4, 0x2e8(r3)
-	cmplwi   r4, 0
-	beq      lbl_8038BEDC
-	lwz      r12, 0(r4)
-	addi     r3, r1, 8
-	lwz      r12, 8(r12)
-	mtctr    r12
-	bctrl
-	lwz      r3, 0xc0(r31)
-	lfs      f2, 0xc(r1)
-	lfs      f0, 0x190(r31)
-	lfs      f3, 0x10(r1)
-	lfs      f1, 0x950(r3)
-	fsubs    f31, f0, f2
-	lfs      f0, 8(r1)
-	stfs     f0, 0x304(r31)
-	fmuls    f31, f31, f1
-	stfs     f2, 0x308(r31)
-	stfs     f3, 0x30c(r31)
-	lwz      r3, 0x2e8(r31)
-	lwz      r12, 0(r3)
-	lwz      r12, 0x64(r12)
-	mtctr    r12
-	bctrl
-	bl       rand
-	xoris    r3, r3, 0x8000
-	lis      r0, 0x4330
-	stw      r3, 0x1c(r1)
-	lfs      f0, lbl_8051EF08@sda21(r2)
-	stw      r0, 0x18(r1)
-	lfd      f2, lbl_8051EF00@sda21(r2)
-	fcmpo    cr0, f31, f0
-	lfd      f1, 0x18(r1)
-	lfs      f0, lbl_8051EEF8@sda21(r2)
-	fsubs    f1, f1, f2
-	fdivs    f0, f1, f0
-	fmr      f3, f0
-	ble      lbl_8038BEB0
-	fneg     f3, f0
-
-lbl_8038BEB0:
-	fmuls    f2, f3, f31
-	lfs      f0, 0x304(r31)
-	lfs      f1, lbl_8051EF74@sda21(r2)
-	fadds    f0, f0, f2
-	stfs     f0, 0x304(r31)
-	lfs      f0, 0x308(r31)
-	fmadds   f0, f1, f3, f0
-	stfs     f0, 0x308(r31)
-	lfs      f0, 0x30c(r31)
-	fadds    f0, f0, f2
-	stfs     f0, 0x30c(r31)
-
-lbl_8038BEDC:
-	psq_l    f31, 56(r1), 0, qr0
-	lwz      r0, 0x44(r1)
-	lfd      f31, 0x30(r1)
-	lwz      r31, 0x2c(r1)
-	mtlr     r0
-	addi     r1, r1, 0x40
-	blr
-	*/
 }
 
 /**

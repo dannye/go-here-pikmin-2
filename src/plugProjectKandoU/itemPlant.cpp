@@ -6,7 +6,7 @@
 #include "efx/TFruitsDown.h"
 
 #include "PSM/EventBase.h"
-#include "PSM/Tsuyukusa.h"
+#include "PSSystem/PSMainSide_ObjSound.h"
 
 #include "JSystem/J3D/J3DAnmLoader.h"
 
@@ -630,7 +630,7 @@ void Item::doAI()
  */
 bool Item::interactAttack(InteractAttack& attack)
 {
-	mCurrentState->onDamage(this, attack.mDamage);
+	getCurrState()->onDamage(this, attack.mDamage);
 	return true;
 }
 
@@ -646,7 +646,7 @@ bool Item::interactAttack(InteractAttack& attack)
  */
 bool Item::interactFarmKarero(InteractFarmKarero& karero)
 {
-	mCurrentState->eventKarero(this);
+	getCurrState()->eventKarero(this);
 	return true;
 }
 
@@ -662,7 +662,7 @@ bool Item::interactFarmKarero(InteractFarmKarero& karero)
  */
 bool Item::interactFarmHaero(InteractFarmHaero& haero)
 {
-	mCurrentState->eventHaero(this);
+	getCurrState()->eventHaero(this);
 	return true;
 }
 
@@ -926,13 +926,13 @@ void ProcAnimator::force(f32)
  */
 void ProcAnimator::update(f32 faceDir, f32 p2)
 {
-	// regswaps with this mess
-	f32 idk       = 80.0f;           // f0
-	f32 temp      = 1.0f;            // f4
-	f32 p3        = p2 * idk;        // f5
-	f32 frameRate = sys->mDeltaTime; // f6
-	f32 idk2      = -((f32)temp * idk);
-	_28 += ((idk2 * _24 - _28 * 1.6f) + p3) * frameRate;
+	f32 stiffness   = 80.0f;
+	f32 springScale = 1.0f;
+	f32 drive       = p2 * stiffness;
+	f32 frameRate   = sys->mDeltaTime;
+	springScale *= stiffness;
+	f32 spring = -springScale;
+	_28 += ((spring * _24 - _28 * 1.6f) + drive) * frameRate;
 	_24 += frameRate * _28;
 
 	if (_24 > TORADIANS(40.0f)) {
@@ -960,14 +960,15 @@ void ProcAnimator::update(f32 faceDir, f32 p2)
 		} else {
 			angleFactor = 1.0f;
 		}
-		f32 angleOffset = _24 * angleFactor;
+		f32 ydist;
+		f32 angleOffset = angleFactor * _24;
 
-		Matrixf mat;                         // 0x8C
-		Vector3f newPos;                     // 0x68
-		f32 theta = mAngle[i] + angleOffset; // f29
-		Vector3f rot;                        // 0x5C
-		f32 angle = mXRot[i] + angleOffset;  // f0
-		f32 ydist = mYDist[i];
+		Matrixf mat;
+		Vector3f newPos;
+		f32 theta = mAngle[i] + angleOffset;
+		Vector3f rot;
+		f32 angle = mXRot[i] + angleOffset;
+		ydist     = mYDist[i];
 
 		newPos.x = 0.0f;
 		newPos.y = ydist;
@@ -1881,7 +1882,7 @@ void Mgr::onLoadResources()
 {
 	loadArchive("arc.szs");
 	loadBmd("model.bmd", 0, J3DMODEL_Unk30 | J3DMODEL_CreateNewDL);
-	mAnmColor = static_cast<J3DAnmColor*>(J3DAnmLoaderDataBase ::load(JKRFileLoader::getGlbResource("model.bpk", nullptr)));
+	mAnmColor = static_cast<J3DAnmColor*>(J3DAnmLoaderDataBase::load(JKRFileLoader::getGlbResource("model.bpk", nullptr)));
 
 	JKRArchive* textArc = openTextArc("texts.szs");
 	P2ASSERTLINE(1329, textArc);

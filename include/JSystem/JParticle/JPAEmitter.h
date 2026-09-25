@@ -51,9 +51,7 @@ struct JPABaseParticle {
 
 	Vector3f getCalcCurrentPosition(const JPABaseEmitter* emit) const
 	{
-		return Vector3f(getCalcCurrentPositionX(emit), 
-						getCalcCurrentPositionY(emit),
-		                getCalcCurrentPositionZ(emit));
+		return Vector3f(getCalcCurrentPositionX(emit), getCalcCurrentPositionY(emit), getCalcCurrentPositionZ(emit));
 	}
 
 	// unused/inlined:
@@ -152,9 +150,12 @@ struct JPABaseEmitter {
 
 	inline void setScale(JGeometry::TVec3f& vec)
 	{
-		mGlobalScl    = vec;
-		mGlobalPScl.x = vec.x;
-		mGlobalPScl.y = vec.y;
+		f32 x = vec.x;
+		f32 y = vec.y;
+		f32 z = vec.z;
+		mGlobalScl.set(x, y, z);
+		mGlobalPScl.x = x;
+		mGlobalPScl.y = y;
 	}
 
 	inline void setScale(f32 scaleXY, f32 scaleZ)
@@ -299,6 +300,23 @@ struct JPABaseEmitter {
 	void setGlobalRMatrix(const Mtx m) { JPASetRMtxfromMtx(m, mGlobalRot); }
 	void setGlobalTranslation(f32 x, f32 y, f32 z) { mGlobalTrs.set(x, y, z); }
 	void setGlobalTranslation(JGeometry::TVec3f& vec) { mGlobalTrs.set(vec); }
+	void setGlobalTranslation(const Vec& vec)
+	{
+		f32 z, y, x;
+		x = vec.x;
+		y = vec.y;
+		z = vec.z;
+		mGlobalTrs.set(x, y, z);
+	}
+	void setGlobalScale(const Vec& scale)
+	{
+		f32 z, y, x;
+		x = scale.x;
+		y = scale.y;
+		z = scale.z;
+		mGlobalScl.set(x, y, z);
+		mGlobalPScl.set(x, y);
+	}
 	void getLocalTranslation(JGeometry::TVec3f& vec) { vec.set(mLocalTrs); }
 	void setGlobalRotation(const JGeometry::TVec3<s16>& rot) { JPAGetXYZRotateMtx(rot.x, rot.y, rot.z, mGlobalRot); }
 	void setGlobalRotation(s16 x, s16 y, s16 z) { JPAGetXYZRotateMtx(x, y, z, mGlobalRot); }
@@ -340,7 +358,6 @@ struct JPABaseEmitter {
 	void playDrawParticle() { resetFlag(JPAEMIT_StopDraw); }
 
 	inline bool isFinished() { return isFlag(JPAEMIT_EnableDeleteEmitter) && getParticleNumber() == 0; }
-
 
 	JGeometry::TVec3f mLocalScl;             // _00
 	JGeometry::TVec3f mLocalTrs;             // _0C

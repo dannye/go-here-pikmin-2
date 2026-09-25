@@ -171,7 +171,7 @@ int J3DMtxBuffer::createBumpMtxArray(J3DModelData* data, u32 viewNum)
 			}
 		}
 		for (int i = 0; i < 2; i++) {
-			u16 materialCount = data->getMaterialNum();
+			u32 materialCount = data->getMaterialNum();
 			int shapeCount    = 0;
 			for (u16 matIndex = 0; matIndex < materialCount; matIndex++) {
 				J3DMaterial* material = data->getMaterialNodePointer(matIndex);
@@ -183,7 +183,7 @@ int J3DMtxBuffer::createBumpMtxArray(J3DModelData* data, u32 viewNum)
 			}
 		}
 		for (int i = 0; i < 2; i++) {
-			u16 materialCount = data->getMaterialNum();
+			u32 materialCount = data->getMaterialNum();
 			int j             = 0;
 			for (u16 matIndex = 0; matIndex < materialCount; matIndex++) {
 				J3DMaterial* material = data->getMaterialNodePointer(matIndex);
@@ -379,7 +379,6 @@ void J3DMtxBuffer::calcWeightEnvelopeMtx()
 	register Mtx* worldMtx;
 	register Mtx* invMtx;
 	register f32 weight;
-	int jointIdx;
 	int mixIdx;
 	int mixCount;
 	int envelopeIdx;
@@ -387,6 +386,7 @@ void J3DMtxBuffer::calcWeightEnvelopeMtx()
 	u16* indices;
 	f32* weights;
 	u8* scaleFlags;
+	int jointIdx;
 	register f32 world0XY;
 	register f32 scratch0;
 	register f32 world1XY;

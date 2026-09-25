@@ -26,10 +26,10 @@ namespace Game {
 
 Color4 Piki::pikiColors[PikiColorCount + 1]
     = { Color4(0, 50, 255, 255),    Color4(255, 30, 0, 255),  Color4(255, 210, 0, 255), Color4(28, 0, 52, 255),
-	    Color4(255, 230, 255, 255), Color4(255, 140, 0, 255), Color4(255, 255, 255, 0) };
+        Color4(255, 230, 255, 255), Color4(255, 140, 0, 255), Color4(255, 255, 255, 0) };
 Color4 Piki::pikiColorsCursor[PikiColorCount + 1]
     = { Color4(0, 50, 255, 255),    Color4(255, 30, 0, 255),  Color4(255, 210, 0, 255), Color4(120, 0, 250, 255),
-	    Color4(255, 230, 255, 255), Color4(255, 140, 0, 255), Color4(255, 255, 255, 0) };
+        Color4(255, 230, 255, 255), Color4(255, 140, 0, 255), Color4(255, 255, 255, 0) };
 
 static const int unusedPikiArray[] = { 0, 0, 0 };
 } // namespace Game
@@ -525,6 +525,9 @@ void Piki::inWaterCallback(WaterBox* wbox)
 {
 	int stateID  = getStateID();
 	int pikiType = getKind();
+
+	// check for pikmin to start drowning. note this check is largely redundant because of code already in Piki::update
+	// both of these functions will cause Pikmin to drown when entering water
 	if (stateID != PIKISTATE_WaterHanged && stateID != PIKISTATE_Drown && !mCurrentState->dead() && pikiType != Blue
 	    && pikiType != Bulbmin) {
 		if (moviePlayer->mDemoState == DEMOSTATE_Inactive && mVelocity.y <= 0.1f) {
@@ -534,103 +537,19 @@ void Piki::inWaterCallback(WaterBox* wbox)
 		}
 	}
 
+	// spawn the water ripple effect when entering water
 	mEffectsObj->mHeight = wbox->getSeaHeightPtr();
 	if (isAlive()) {
 		efx::TPkEffect* effectObj = mEffectsObj;
-		effectObj->doWaterEntry(effectObj->isFlag(PKEFF_Drown)); // regswap in this inline
+		bool wasDrowning;
+		if (effectObj->isFlag(PKEFF_Drown)) {
+			wasDrowning = true;
+		} else {
+			wasDrowning = false;
+		}
+		effectObj->doWaterEntry(wasDrowning);
 		mSoundObj->startFreePikiSetSound(PSSE_PK_SE_WATER_IN, PSGame::SeMgr::SETSE_PikiLanding, 90, 0);
 	}
-
-	/*
-	stwu     r1, -0x20(r1)
-	mflr     r0
-	stw      r0, 0x24(r1)
-	stw      r31, 0x1c(r1)
-	stw      r30, 0x18(r1)
-	mr       r30, r4
-	stw      r29, 0x14(r1)
-	mr       r29, r3
-	bl       getStateID__Q24Game4PikiFv
-	cmpwi    r3, 5
-	lbz      r31, 0x2b8(r29)
-	beq      lbl_80148C80
-	cmpwi    r3, 0xa
-	beq      lbl_80148C80
-	lwz      r3, 0x290(r29)
-	lwz      r12, 0(r3)
-	lwz      r12, 0x58(r12)
-	mtctr    r12
-	bctrl
-	clrlwi.  r0, r3, 0x18
-	bne      lbl_80148C80
-	cmpwi    r31, 0
-	beq      lbl_80148C80
-	cmpwi    r31, 5
-	beq      lbl_80148C80
-	lwz      r3, moviePlayer__4Game@sda21(r13)
-	lwz      r0, 0x18(r3)
-	cmpwi    r0, 0
-	bne      lbl_80148CFC
-	lfs      f1, 0x204(r29)
-	lfs      f0, lbl_80518438@sda21(r2)
-	fcmpo    cr0, f1, f0
-	cror     2, 0, 2
-	bne      lbl_80148CFC
-	lwz      r3, 0x28c(r29)
-	mr       r4, r29
-	li       r5, 0xa
-	li       r6, 0
-	lwz      r12, 0(r3)
-	lwz      r12, 0x14(r12)
-	mtctr    r12
-	bctrl
-	b        lbl_80148C80
-	b        lbl_80148CFC
-
-lbl_80148C80:
-	mr       r3, r30
-	lwz      r12, 0(r30)
-	lwz      r12, 0x14(r12)
-	mtctr    r12
-	bctrl
-	lwz      r4, 0x258(r29)
-	stw      r3, 0x20(r4)
-	mr       r3, r29
-	lwz      r12, 0(r29)
-	lwz      r12, 0xa8(r12)
-	mtctr    r12
-	bctrl
-	clrlwi.  r0, r3, 0x18
-	beq      lbl_80148CFC
-	lwz      r31, 0x258(r29)
-	lwz      r4, 0(r31)
-	mr       r3, r31
-	ori      r0, r4, 0x20
-	rlwinm   r30, r4, 0x1b, 0x1f, 0x1f
-	stw      r0, 0(r31)
-	bl       updateHamon___Q23efx9TPkEffectFv
-	cmplwi   r30, 0
-	bne      lbl_80148CE4
-	addi     r3, r31, 0x28
-	bl       "createSimpleDive__3efxFR10Vector3<f>"
-
-lbl_80148CE4:
-	lwz      r3, 0x250(r29)
-	li       r4, 0x2811
-	li       r5, 6
-	li       r6, 0x5a
-	li       r7, 0
-	bl       startFreePikiSetSound__Q23PSM4PikiFUlQ36PSGame5SeMgr7SetSeIdUlUl
-
-lbl_80148CFC:
-	lwz      r0, 0x24(r1)
-	lwz      r31, 0x1c(r1)
-	lwz      r30, 0x18(r1)
-	lwz      r29, 0x14(r1)
-	mtlr     r0
-	addi     r1, r1, 0x20
-	blr
-	*/
 }
 
 /**
@@ -651,22 +570,22 @@ void Piki::outWaterCallback()
  */
 bool Piki::might_bury()
 {
+	// Don't allow Pikmin to get buried if no floor triangle doesn't exist or it doesn't allow seeds
 	if (mFloorTriangle && mFloorTriangle->mCode.isBald()) {
 		return false;
 	}
 
+	// Don't allow Pikmin to get buried if they are within 100 units of a cave hole or geyser
 	Sys::Sphere sphere(mPosition, 100.0f);
 	CellIteratorArg iterArg(sphere);
 	CellIterator iter(iterArg);
-
 	CI_LOOP(iter)
 	{
 		Creature* creature = static_cast<Creature*>(*iter);
 		if (creature->mObjectTypeID == OBJTYPE_Cave || creature->mObjectTypeID == OBJTYPE_BigFountain
 		    || creature->mObjectTypeID == OBJTYPE_Hole) {
 			Vector3f creaturePos = creature->getPosition();
-			Vector3f sep         = Vector3f(creaturePos.y - mPosition.y, creaturePos.z - mPosition.z, creaturePos.x - mPosition.x);
-			if (_length2(sep) <= 100.0f) {
+			if (creaturePos.distance(mPosition) <= 100.0f) {
 				return false;
 			}
 		}
@@ -860,10 +779,12 @@ void Piki::updateGasInvincible()
  */
 f32 Piki::getAttackDamage()
 {
+	// When Pikmin are Spicy, their own types damage gets overwritten with the spicy damage instead
 	if (doped()) {
 		return pikiMgr->mParms->mPikiParms.mDopeAttackDamage.mValue;
 	}
 
+	// In 2-Player battle, both Red and Blue Pikmin do Red damage to be fair
 	if (gameSystem && gameSystem->isVersusMode()) {
 		return pikiMgr->mParms->mPikiParms.mRedAttackDamage.mValue;
 	}
@@ -905,6 +826,7 @@ f32 Piki::getThrowHeight()
 		return static_cast<NaviParms*>(mNavi->mParms)->mNaviParms.mThrowWhiteHeight.mValue;
 	}
 
+	// Throw height for reds, blues, Bulbmin and carrots
 	return static_cast<NaviParms*>(mNavi->mParms)->mNaviParms.mThrowHeightMin.mValue;
 }
 
@@ -927,6 +849,7 @@ f32 Piki::getPelletCarryPower()
 		break;
 	}
 
+	// Spicy Pikmin use Flower carry strength regardless of actual happa stage
 	if (doped() || getHappa() == Flower) {
 		carryPower += pikiMgr->mParms->mPikiParms.mFlowerCarrySpeedBonus.mValue;
 	} else if (getHappa() == Bud) {
@@ -952,6 +875,8 @@ void Piki::onStickEndSelf(Creature* creature)
 {
 	Vector3f pikiPos = getPosition();
 
+	// When letting go of a held pellet or enemy, snap the Pikmin to ground level if there is no floor under it
+	// prevents Pikmin from falling out of bounds (usually)
 	if (mapMgr) {
 		CurrTriInfo triInfo;
 		triInfo.mPosition        = pikiPos;
@@ -1040,6 +965,8 @@ void Piki::platCallback(PlatEvent& event)
 		getCurrAction()->platCallback(this, event);
 	}
 
+	// Kill Pikmin for touching electric gates
+	// The Yellow Pikmin check here is redundant since InteractDenki already won't affect Yellows
 	if (isAlive() && !mCurrentState->dead() && event.mInstance->mId.match('elec', '*') && getKind() != Yellow) {
 		mTekiKillID = -1;
 		InteractDenki zap(this, 0.0f, &Vector3f::zero);
@@ -1159,7 +1086,21 @@ bool Piki::doped()
  */
 void Piki::updateDope()
 {
-	// UNUSED FUNCTION
+	if (mIsDoped != -1 && mDopeTime > 0.0f) {
+		mDopeTime -= sys->mDeltaTime;
+		if (mDopeTime <= 0) {
+			mSoundObj->startFreePikiSetSound(PSSE_PK_VC_DOPE_END, PSGame::SeMgr::SETSE_Unk0, 90, 0);
+			if (mIsDoped != -1) {
+				mIsDoped = -1;
+
+				if (pikiMgr->mDopedPikis > 0) {
+					pikiMgr->mDopedPikis--;
+				}
+			}
+			mDopeTime = 0;
+			mEffectsObj->doKillDoping();
+		}
+	}
 }
 
 /**
@@ -1309,25 +1250,7 @@ void Piki::startMotion(int animIdx1, int animIdx2, SysShape::MotionListener* lis
 void Piki::doAnimation()
 {
 	FakePiki::doAnimation();
-
-	if (mIsDoped != -1 && mDopeTime > 0.0f) {
-
-		mDopeTime -= sys->mDeltaTime;
-		if (mDopeTime <= 0) {
-			mSoundObj->startFreePikiSetSound(PSSE_PK_VC_DOPE_END, PSGame::SeMgr::SETSE_Unk0, 90, 0);
-			if (mIsDoped != -1) {
-				mIsDoped = -1;
-
-				if (pikiMgr->mDopedPikis > 0) {
-					pikiMgr->mDopedPikis--;
-				}
-			}
-
-			mDopeTime = 0;
-
-			mEffectsObj->doKillDoping();
-		}
-	}
+	updateDope();
 }
 
 /**
@@ -1419,8 +1342,7 @@ void Piki::do_updateLookCreature()
 			mTargetLookTimer -= sys->mDeltaTime;
 			if (mTargetLookTimer > 0.0f) {
 				Vector3f targetPos = mLookAtTargetCreature->getPosition();
-				Vector3f sep       = Vector3f(targetPos.y - mPosition.y, targetPos.z - mPosition.z, targetPos.x - mPosition.x);
-				if (_length2(sep) > 200.0f) {
+				if (targetPos.distance(mPosition) > 200.0f) {
 					finishLook();
 				}
 				return;
@@ -1483,8 +1405,9 @@ void Piki::do_updateLookCreature()
  */
 void Piki::setTekiKillID(int id)
 {
-	if (id == 98) {
-		id = 99;
+	// if a Pikmin is killed by Waterwraith's tires, count it as Waterwraith itself instead
+	if (id == EnemyTypeID::EnemyID_Tyre) {
+		id = EnemyTypeID::EnemyID_BlackMan;
 	}
 
 	mTekiKillID = id;

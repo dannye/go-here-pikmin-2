@@ -734,7 +734,7 @@ void Graphics::fillZBuffer(Rectf& bounds, f32 z)
 	GXSetColorUpdate(GX_FALSE);
 	GXSetZMode(GX_TRUE, GX_ALWAYS, GX_TRUE);
 
-	Mtx mtx;
+	Mtx44 mtx;
 	C_MTXOrtho(mtx, bounds.p1.y, bounds.p2.y, bounds.p1.x, bounds.p2.x, -1.0f, 1.0f);
 	GXSetProjection(mtx, GX_ORTHOGRAPHIC);
 
@@ -764,248 +764,6 @@ void Graphics::fillZBuffer(Rectf& bounds, f32 z)
 
 	GXSetZMode(GX_TRUE, GX_LESS, GX_TRUE);
 	GXSetColorUpdate(GX_TRUE);
-
-	/*
-	stwu     r1, -0xc0(r1)
-	mflr     r0
-	stw      r0, 0xc4(r1)
-	stfd     f31, 0xb0(r1)
-	psq_st   f31, 184(r1), 0, qr0
-	stfd     f30, 0xa0(r1)
-	psq_st   f30, 168(r1), 0, qr0
-	stfd     f29, 0x90(r1)
-	psq_st   f29, 152(r1), 0, qr0
-	stmw     r27, 0x7c(r1)
-	fmr      f29, f1
-	mr       r27, r3
-	lis      r3, lbl_80499C38@ha
-	mr       r31, r4
-	mr       r30, r27
-	li       r29, 0
-	addi     r28, r3, lbl_80499C38@l
-	b        lbl_80426950
-
-lbl_80426930:
-	lwz      r3, 4(r30)
-	mr       r4, r28
-	bl       strcmp
-	cmpwi    r3, 0
-	bne      lbl_80426948
-	b        lbl_80426960
-
-lbl_80426948:
-	addi     r30, r30, 4
-	addi     r29, r29, 1
-
-lbl_80426950:
-	lhz      r0, 0(r27)
-	cmpw     r29, r0
-	blt      lbl_80426930
-	li       r29, -1
-
-lbl_80426960:
-	cmpwi    r29, -1
-	bne      lbl_804269A0
-	lhz      r0, 0(r27)
-	cmplwi   r0, 0x20
-	bge      lbl_804269A8
-	rlwinm   r0, r0, 2, 0xe, 0x1d
-	lis      r3, lbl_80499C38@ha
-	addi     r4, r3, lbl_80499C38@l
-	add      r3, r27, r0
-	stw      r4, 4(r3)
-	lhz      r3, 0(r27)
-	bl       GXSetDrawSync
-	lhz      r3, 0(r27)
-	addi     r0, r3, 1
-	sth      r0, 0(r27)
-	b        lbl_804269A8
-
-lbl_804269A0:
-	clrlwi   r3, r29, 0x10
-	bl       GXSetDrawSync
-
-lbl_804269A8:
-	bl       initGX__8GraphicsFv
-	li       r3, 1
-	bl       GXSetNumTevStages
-	li       r3, 0
-	li       r4, 4
-	bl       GXSetTevOp
-	li       r3, 0
-	li       r4, 0
-	li       r5, 0
-	li       r6, 4
-	bl       GXSetTevOrder
-	li       r3, 1
-	bl       GXSetNumChans
-	li       r3, 4
-	li       r4, 1
-	li       r5, 1
-	li       r6, 1
-	li       r7, 0
-	li       r8, 0
-	li       r9, 2
-	bl       GXSetChanCtrl
-	mr       r3, r27
-	bl       disableLight__8GraphicsFv
-	mr       r3, r27
-	bl       clearVtxDesc__8GraphicsFv
-	mr       r3, r27
-	li       r4, 9
-	li       r5, 1
-	bl       setVtxDesc__8GraphicsF7_GXAttr11_GXAttrType
-	mr       r3, r27
-	li       r4, 0xb
-	li       r5, 1
-	bl       setVtxDesc__8GraphicsF7_GXAttr11_GXAttrType
-	mr       r3, r27
-	li       r4, 0
-	li       r5, 9
-	li       r6, 1
-	li       r7, 4
-	li       r8, 0
-	bl setVtxAttrFmt__8GraphicsF9_GXVtxFmt7_GXAttr10_GXCompCnt11_GXCompTypeUc mr
-r3, r27 li       r4, 0 li       r5, 0xb li       r6, 1 li       r7, 5 li r8, 0
-	bl setVtxAttrFmt__8GraphicsF9_GXVtxFmt7_GXAttr10_GXCompCnt11_GXCompTypeUc li
-r3, 0 bl       GXSetCullMode li       r3, 6 li       r4, 0 bl GXSetLineWidth li
-r3, 0 li       r4, 1 li       r5, 1 li       r6, 0 bl       GXSetBlendMode li
-r3, 1 li       r4, 1 li       r5, 1 bl       GXSetZMode addi     r3, r27, 0x8c
-	li       r4, 0
-	bl       GXLoadPosMtxImm
-	lfs      f2, 4(r31)
-	lfs      f0, 0xc(r31)
-	lfs      f1, 0(r31)
-	lfs      f3, 8(r31)
-	fsubs    f4, f0, f2
-	lfs      f5, lbl_805204B8@sda21(r2)
-	fsubs    f3, f3, f1
-	lfs      f6, lbl_805204C8@sda21(r2)
-	bl       GXSetViewport
-	lfs      f31, 4(r31)
-	lfs      f0, 0xc(r31)
-	lfs      f30, 0(r31)
-	fsubs    f1, f0, f31
-	bl       __cvt_fp2unsigned
-	lfs      f0, 8(r31)
-	mr       r28, r3
-	fsubs    f1, f0, f30
-	bl       __cvt_fp2unsigned
-	fmr      f1, f31
-	mr       r29, r3
-	bl       __cvt_fp2unsigned
-	fmr      f1, f30
-	mr       r30, r3
-	bl       __cvt_fp2unsigned
-	mr       r4, r30
-	mr       r5, r29
-	mr       r6, r28
-	bl       GXSetScissor
-	li       r3, 0
-	bl       GXSetColorUpdate
-	li       r3, 1
-	li       r4, 7
-	li       r5, 1
-	bl       GXSetZMode
-	lfs      f1, 4(r31)
-	addi     r3, r1, 0x38
-	lfs      f2, 0xc(r31)
-	lfs      f3, 0(r31)
-	lfs      f4, 8(r31)
-	lfs      f5, lbl_805204CC@sda21(r2)
-	lfs      f6, lbl_805204C8@sda21(r2)
-	bl       C_MTXOrtho
-	addi     r3, r1, 0x38
-	li       r4, 1
-	bl       GXSetProjection
-	addi     r3, r1, 8
-	bl       PSMTXIdentity
-	addi     r3, r1, 8
-	li       r4, 0
-	bl       GXLoadPosMtxImm
-	li       r3, 0
-	bl       GXSetCullMode
-	bl       GXClearVtxDesc
-	li       r3, 9
-	li       r4, 1
-	bl       GXSetVtxDesc
-	li       r3, 0xb
-	li       r4, 1
-	bl       GXSetVtxDesc
-	li       r3, 0
-	li       r4, 9
-	li       r5, 1
-	li       r6, 4
-	li       r7, 0
-	bl       GXSetVtxAttrFmt
-	li       r3, 0
-	li       r4, 0xb
-	li       r5, 1
-	li       r6, 5
-	li       r7, 0
-	bl       GXSetVtxAttrFmt
-	li       r3, 0x80
-	li       r4, 0
-	li       r5, 4
-	bl       GXBegin
-	lfs      f1, 4(r31)
-	lis      r8, 0xCC008000@ha
-	lfs      f0, 0(r31)
-	li       r7, 0xa
-	li       r6, 0x46
-	li       r0, 0xff
-	stfs     f0, 0xCC008000@l(r8)
-	li       r3, 1
-	li       r4, 1
-	li       r5, 1
-	stfs     f1, -0x8000(r8)
-	stfs     f29, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r6, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r0, -0x8000(r8)
-	lfs      f1, 0xc(r31)
-	lfs      f0, 0(r31)
-	stfs     f0, -0x8000(r8)
-	stfs     f1, -0x8000(r8)
-	stfs     f29, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r6, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r0, -0x8000(r8)
-	lfs      f1, 0xc(r31)
-	lfs      f0, 8(r31)
-	stfs     f0, -0x8000(r8)
-	stfs     f1, -0x8000(r8)
-	stfs     f29, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r6, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r0, -0x8000(r8)
-	lfs      f1, 4(r31)
-	lfs      f0, 8(r31)
-	stfs     f0, -0x8000(r8)
-	stfs     f1, -0x8000(r8)
-	stfs     f29, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r6, -0x8000(r8)
-	stb      r7, -0x8000(r8)
-	stb      r0, -0x8000(r8)
-	bl       GXSetZMode
-	li       r3, 1
-	bl       GXSetColorUpdate
-	psq_l    f31, 184(r1), 0, qr0
-	lfd      f31, 0xb0(r1)
-	psq_l    f30, 168(r1), 0, qr0
-	lfd      f30, 0xa0(r1)
-	psq_l    f29, 152(r1), 0, qr0
-	lfd      f29, 0x90(r1)
-	lmw      r27, 0x7c(r1)
-	lwz      r0, 0xc4(r1)
-	mtlr     r0
-	addi     r1, r1, 0xc0
-	blr
-	*/
 }
 
 /**
@@ -1044,7 +802,8 @@ void Graphics::drawCone(Vector3f& start, Vector3f& end, f32 inAngle, int limit)
 		xVec = cross(yAxis, sep);
 		xVec.normalise();
 
-		yVec = cross(xVec, sep);
+		yVec = xVec;
+		yVec.CP(sep);
 		yVec.normalise();
 	} else {
 		yVec = cross(xAxis, sep);
@@ -1631,7 +1390,7 @@ void Graphics::setupJ2DOrthoGraphDefault()
 	mOrthoGraph.place(0.0f, 0.0f, x, y);
 
 	f32 y2   = sys->getRenderModeObj()->efbHeight + gScissorOffset;
-	f32 x2   = sys->getRenderModeObj()->fbWidth;
+	u16 x2   = sys->getRenderModeObj()->fbWidth;
 	f32 offs = 0.0f;
 	mOrthoGraph.scissor(JGeometry::TBox2f(0.0f, 0.0f, offs + x2, offs + y2));
 
@@ -1639,99 +1398,6 @@ void Graphics::setupJ2DOrthoGraphDefault()
 	x = sys->getRenderModeObj()->fbWidth;
 	JGeometry::TBox2f bounds2(0.0f, 0.0f, x, y);
 	mOrthoGraph.setOrtho(bounds2, -1024.0f, 1024.0f);
-	/*
-	stwu     r1, -0x70(r1)
-	mflr     r0
-	stw      r0, 0x74(r1)
-	stfd     f31, 0x60(r1)
-	psq_st   f31, 104(r1), 0, qr0
-	stw      r31, 0x5c(r1)
-	stw      r30, 0x58(r1)
-	mr       r30, r3
-	bl       getRenderModeObj__6SystemFv
-	bl       getRenderModeObj__6SystemFv
-	lhz      r31, 6(r3)
-	bl       getRenderModeObj__6SystemFv
-	lhz      r4, 4(r3)
-	lis      r0, 0x4330
-	addi     r3, r30, 0xbc
-	lfs      f1, lbl_805204B8@sda21(r2)
-	stw      r4, 0x2c(r1)
-	lwz      r12, 0xbc(r30)
-	fmr      f2, f1
-	stw      r0, 0x28(r1)
-	lfd      f4, lbl_805204C0@sda21(r2)
-	lfd      f0, 0x28(r1)
-	stw      r31, 0x34(r1)
-	lwz      r12, 0x10(r12)
-	fsubs    f3, f0, f4
-	stw      r0, 0x30(r1)
-	lfd      f0, 0x30(r1)
-	fsubs    f4, f0, f4
-	mtctr    r12
-	bctrl
-	bl       getRenderModeObj__6SystemFv
-	lhz      r4, 6(r3)
-	lis      r0, 0x4330
-	lwz      r3, gScissorOffset@sda21(r13)
-	stw      r0, 0x38(r1)
-	add      r0, r3, r4
-	lfd      f1, lbl_805204D0@sda21(r2)
-	xoris    r0, r0, 0x8000
-	stw      r0, 0x3c(r1)
-	lfd      f0, 0x38(r1)
-	fsubs    f31, f0, f1
-	bl       getRenderModeObj__6SystemFv
-	lhz      r4, 4(r3)
-	lis      r0, 0x4330
-	lfs      f3, lbl_805204B8@sda21(r2)
-	addi     r3, r30, 0xbc
-	stw      r4, 0x44(r1)
-	addi     r4, r1, 8
-	fadds    f0, f3, f31
-	lfd      f2, lbl_805204C0@sda21(r2)
-	stw      r0, 0x40(r1)
-	lfd      f1, 0x40(r1)
-	stfs     f3, 8(r1)
-	fsubs    f1, f1, f2
-	stfs     f3, 0xc(r1)
-	fadds    f1, f3, f1
-	stfs     f0, 0x14(r1)
-	stfs     f1, 0x10(r1)
-	bl       "scissor__14J2DGrafContextFRCQ29JGeometry8TBox2<f>"
-	bl       getRenderModeObj__6SystemFv
-	lhz      r31, 6(r3)
-	bl       getRenderModeObj__6SystemFv
-	lhz      r4, 4(r3)
-	lis      r0, 0x4330
-	lfs      f5, lbl_805204B8@sda21(r2)
-	addi     r3, r30, 0xbc
-	stw      r4, 0x4c(r1)
-	addi     r4, r1, 0x18
-	lfd      f4, lbl_805204C0@sda21(r2)
-	stw      r0, 0x48(r1)
-	lfs      f1, lbl_805204F8@sda21(r2)
-	lfd      f0, 0x48(r1)
-	stw      r31, 0x54(r1)
-	fsubs    f3, f0, f4
-	lfs      f2, lbl_805204FC@sda21(r2)
-	stw      r0, 0x50(r1)
-	lfd      f0, 0x50(r1)
-	stfs     f5, 0x18(r1)
-	fsubs    f0, f0, f4
-	stfs     f5, 0x1c(r1)
-	stfs     f3, 0x20(r1)
-	stfs     f0, 0x24(r1)
-	bl       "setOrtho__13J2DOrthoGraphFRCQ29JGeometry8TBox2<f>ff"
-	psq_l    f31, 104(r1), 0, qr0
-	lwz      r0, 0x74(r1)
-	lfd      f31, 0x60(r1)
-	lwz      r31, 0x5c(r1)
-	lwz      r30, 0x58(r1)
-	mtlr     r0
-	addi     r1, r1, 0x70
-	blr
-	*/
 }
 
 /**
@@ -1745,85 +1411,12 @@ void Graphics::setupJ2DPerspGraphDefault()
 	mPerspGraph.place(0.0f, 0.0f, x, y);
 
 	f32 y2   = sys->getRenderModeObj()->efbHeight + gScissorOffset;
-	f32 x2   = sys->getRenderModeObj()->fbWidth;
+	u16 x2   = sys->getRenderModeObj()->fbWidth;
 	f32 offs = 0.0f;
 	JGeometry::TBox2f bounds(0.0f, 0.0f, offs + x2, offs + y2);
 	mPerspGraph.scissor(bounds);
 
 	mPerspGraph.set(30.0f, 10.0f, 10000.0f);
-	/*
-	stwu     r1, -0x50(r1)
-	mflr     r0
-	stw      r0, 0x54(r1)
-	stfd     f31, 0x40(r1)
-	psq_st   f31, 72(r1), 0, qr0
-	stw      r31, 0x3c(r1)
-	stw      r30, 0x38(r1)
-	mr       r30, r3
-	bl       getRenderModeObj__6SystemFv
-	lhz      r31, 6(r3)
-	bl       getRenderModeObj__6SystemFv
-	lhz      r4, 4(r3)
-	lis      r0, 0x4330
-	addi     r3, r30, 0x190
-	lfs      f1, lbl_805204B8@sda21(r2)
-	stw      r4, 0x1c(r1)
-	lwz      r12, 0x190(r30)
-	fmr      f2, f1
-	stw      r0, 0x18(r1)
-	lfd      f4, lbl_805204C0@sda21(r2)
-	lfd      f0, 0x18(r1)
-	stw      r31, 0x24(r1)
-	lwz      r12, 0x10(r12)
-	fsubs    f3, f0, f4
-	stw      r0, 0x20(r1)
-	lfd      f0, 0x20(r1)
-	fsubs    f4, f0, f4
-	mtctr    r12
-	bctrl
-	bl       getRenderModeObj__6SystemFv
-	lhz      r4, 6(r3)
-	lis      r0, 0x4330
-	lwz      r3, gScissorOffset@sda21(r13)
-	stw      r0, 0x28(r1)
-	add      r0, r3, r4
-	lfd      f1, lbl_805204D0@sda21(r2)
-	xoris    r0, r0, 0x8000
-	stw      r0, 0x2c(r1)
-	lfd      f0, 0x28(r1)
-	fsubs    f31, f0, f1
-	bl       getRenderModeObj__6SystemFv
-	lhz      r4, 4(r3)
-	lis      r0, 0x4330
-	lfs      f3, lbl_805204B8@sda21(r2)
-	addi     r3, r30, 0x190
-	stw      r4, 0x34(r1)
-	addi     r4, r1, 8
-	fadds    f0, f3, f31
-	lfd      f2, lbl_805204C0@sda21(r2)
-	stw      r0, 0x30(r1)
-	lfd      f1, 0x30(r1)
-	stfs     f3, 8(r1)
-	fsubs    f1, f1, f2
-	stfs     f3, 0xc(r1)
-	fadds    f1, f3, f1
-	stfs     f0, 0x14(r1)
-	stfs     f1, 0x10(r1)
-	bl       "scissor__14J2DGrafContextFRCQ29JGeometry8TBox2<f>"
-	lfs      f1, lbl_80520500@sda21(r2)
-	addi     r3, r30, 0x190
-	lfs      f2, lbl_80520504@sda21(r2)
-	lfs      f3, lbl_80520508@sda21(r2)
-	bl       set__13J2DPerspGraphFfff
-	psq_l    f31, 72(r1), 0, qr0
-	lwz      r0, 0x54(r1)
-	lfd      f31, 0x40(r1)
-	lwz      r31, 0x3c(r1)
-	lwz      r30, 0x38(r1)
-	mtlr     r0
-	addi     r1, r1, 0x50
-	blr
-	*/
 }
 
 /**

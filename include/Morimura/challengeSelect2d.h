@@ -63,6 +63,7 @@ struct TChallengePlayModeScreen : public TScreenBase {
 	virtual void draw(Graphics&, J2DPerspGraph*); // _10
 
 	inline bool isState(u8 state) const { return mState == state; }
+	inline bool isOpen() const { return mState != PlayModeScreen_Closed; }
 
 	// _00     = VTBL
 	// _00-_18 = TScreenBase
@@ -85,7 +86,9 @@ struct TChallengePlayModeScreen : public TScreenBase {
 	bool mDoShowNoController;                    // _84
 	f32 mNoControllerTimer;                      // _88
 	f32 mTimer;                                  // _8C
+#if !defined(VERSION_JP)                         //
 	f32 mTimer2;                                 // _90
+#endif                                           //
 	f32 mMovePos;                                // _94
 	f32 mAlphaTimer;                             // _98
 	f32 mScale;                                  // _9C

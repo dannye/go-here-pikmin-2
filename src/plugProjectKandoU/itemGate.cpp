@@ -2,7 +2,7 @@
 #include "Game/Entities/ItemDengekiGate.h"
 #include "efx/TGate.h"
 #include "efx/TEgate.h"
-#include "PSM/WorkItem.h"
+#include "PSSystem/PSMainSide_ObjSound.h"
 #include "Dolphin/rand.h"
 #include "Sys/MatBaseAnimator.h"
 #include "Game/routeMgr.h"
@@ -196,7 +196,7 @@ void ItemGate::update()
 void ItemGate::doAI()
 {
 	mMabiki.update(4);
-	mFsm->exec(this);
+	FSMItem::doAI();
 	switch (mSoundEvent.update()) {
 	case TSE_ApplyTransition:
 		P2ASSERTLINE(354, mSoundObj->getCastType() == PSM::CCT_WorkItem);
@@ -214,8 +214,8 @@ void ItemGate::doAI()
  */
 void ItemGate::onKeyEvent(const SysShape::KeyEvent& keyEvent)
 {
-	if (mCurrentState) {
-		mCurrentState->onKeyEvent(this, keyEvent);
+	if (getCurrState()) {
+		getCurrState()->onKeyEvent(this, keyEvent);
 	}
 }
 
@@ -225,8 +225,8 @@ void ItemGate::onKeyEvent(const SysShape::KeyEvent& keyEvent)
  */
 bool ItemGate::interactAttack(Game::InteractAttack& attack)
 {
-	if (mCurrentState) {
-		mCurrentState->onDamage(this, attack.mDamage);
+	if (getCurrState()) {
+		getCurrState()->onDamage(this, attack.mDamage);
 		switch (mSoundEvent.event()) {
 		case TSE_Active:
 			P2ASSERTLINE(380, mSoundObj->getCastType() == PSM::CCT_WorkItem);
@@ -368,282 +368,35 @@ void ItemGate::initPlanes()
 
 	Vector3f pos = getPosition();
 
-	Vector3f vec1          = Vector3f(_270);
-	Vector3f* vec1Ptr      = &vec1;
-	Vector3f plane0vec     = pos + (vec1 * 20.0f);
-	Vector3f* plane0vecPtr = &plane0vec;
-	mPlanes[0].mNormal     = vec1;
-	mPlanes[0].mOffset     = plane0vec.dot(mPlanes[0].mNormal);
+	Vec normal0;
+	normal0.x          = _270.x;
+	normal0.y          = _270.y;
+	normal0.z          = _270.z;
+	Vector3f plane0vec = pos + Vector3f(normal0) * 20.0f;
+	mPlanes[0].updatePlane(plane0vec, normal0);
 
-	Vector3f vec2          = Vector3f(-f64(_270.x), -f64(_270.y), -f64(_270.z));
-	Vector3f* vec2Ptr      = &vec2;
-	Vector3f plane1vec     = pos + (vec2 * 20.0f);
-	Vector3f* plane1vecPtr = &plane1vec;
-	mPlanes[1].mNormal     = vec2;
-	mPlanes[1].mOffset     = plane1vec.dot(mPlanes[1].mNormal);
+	Vector3f dir1 = -_270;
+	Vec normal1;
+	normal1.x          = dir1.x;
+	normal1.y          = dir1.y;
+	normal1.z          = dir1.z;
+	Vector3f plane1vec = pos + Vector3f(normal1) * 20.0f;
+	mPlanes[1].updatePlane(plane1vec, normal1);
 
-	Vector3f vec3          = Vector3f(mGateDirection);
-	Vector3f* vec3Ptr      = &vec3;
-	Vector3f plane2vec     = pos + (vec3 * 76.5f);
-	Vector3f* plane2vecPtr = &plane2vec;
-	mPlanes[2].mNormal     = vec3;
-	mPlanes[2].mOffset     = plane2vec.dot(mPlanes[2].mNormal);
+	Vec normal2;
+	normal2.x          = mGateDirection.x;
+	normal2.y          = mGateDirection.y;
+	normal2.z          = mGateDirection.z;
+	Vector3f plane2vec = pos + Vector3f(normal2) * 76.5f;
+	mPlanes[2].updatePlane(plane2vec, normal2);
 
-	Vector3f vec4          = Vector3f(-f64(mGateDirection.x), -f64(mGateDirection.y), -f64(mGateDirection.z));
-	Vector3f* vec4Ptr      = &vec4;
-	Vector3f plane3vec     = pos + (vec4 * 76.5f);
-	Vector3f* plane3vecPtr = &plane3vec;
-	mPlanes[3].mNormal     = vec4;
-	mPlanes[3].mOffset     = plane3vec.dot(mPlanes[3].mNormal);
-
-	/*
-	stwu     r1, -0xb0(r1)
-	mflr     r0
-	lfs      f0, lbl_80519598@sda21(r2)
-	stw      r0, 0xb4(r1)
-	stw      r31, 0xac(r1)
-	mr       r31, r3
-	lfs      f3, 0x214(r3)
-	fmr      f1, f3
-	fcmpo    cr0, f3, f0
-	bge      lbl_801C8488
-	fneg     f1, f3
-
-lbl_801C8488:
-	lfs      f2, lbl_805195C8@sda21(r2)
-	lis      r3, sincosTable___5JMath@ha
-	lfs      f0, lbl_80519598@sda21(r2)
-	addi     r3, r3, sincosTable___5JMath@l
-	fmuls    f1, f1, f2
-	addi     r5, r3, 4
-	fcmpo    cr0, f3, f0
-	fctiwz   f0, f1
-	stfd     f0, 0x78(r1)
-	lwz      r0, 0x7c(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f1, r5, r0
-	bge      lbl_801C84E0
-	lfs      f0, lbl_805195CC@sda21(r2)
-	fmuls    f0, f3, f0
-	fctiwz   f0, f0
-	stfd     f0, 0x80(r1)
-	lwz      r0, 0x84(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f0, r3, r0
-	fneg     f0, f0
-	b        lbl_801C84F8
-
-lbl_801C84E0:
-	fmuls    f0, f3, f2
-	fctiwz   f0, f0
-	stfd     f0, 0x88(r1)
-	lwz      r0, 0x8c(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f0, r3, r0
-
-lbl_801C84F8:
-	stfs     f0, 0x270(r31)
-	lfs      f0, lbl_80519598@sda21(r2)
-	stfs     f0, 0x274(r31)
-	stfs     f1, 0x278(r31)
-	lfs      f3, 0x214(r31)
-	fcmpo    cr0, f3, f0
-	bge      lbl_801C8540
-	lfs      f0, lbl_805195CC@sda21(r2)
-	lis      r3, sincosTable___5JMath@ha
-	addi     r3, r3, sincosTable___5JMath@l
-	fmuls    f0, f3, f0
-	fctiwz   f0, f0
-	stfd     f0, 0x90(r1)
-	lwz      r0, 0x94(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f0, r3, r0
-	fneg     f1, f0
-	b        lbl_801C8564
-
-lbl_801C8540:
-	lfs      f0, lbl_805195C8@sda21(r2)
-	lis      r3, sincosTable___5JMath@ha
-	addi     r3, r3, sincosTable___5JMath@l
-	fmuls    f0, f3, f0
-	fctiwz   f0, f0
-	stfd     f0, 0x98(r1)
-	lwz      r0, 0x9c(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f1, r3, r0
-
-lbl_801C8564:
-	lfs      f0, lbl_80519598@sda21(r2)
-	fneg     f2, f1
-	fcmpo    cr0, f3, f0
-	bge      lbl_801C8578
-	fneg     f3, f3
-
-lbl_801C8578:
-	lfs      f1, lbl_805195C8@sda21(r2)
-	mr       r4, r31
-	lfs      f0, lbl_80519598@sda21(r2)
-	addi     r3, r1, 0x38
-	fmuls    f1, f3, f1
-	fctiwz   f1, f1
-	stfd     f1, 0xa0(r1)
-	lwz      r0, 0xa4(r1)
-	rlwinm   r0, r0, 3, 0x12, 0x1c
-	lfsx     f1, r5, r0
-	stfs     f1, 0x264(r31)
-	stfs     f0, 0x268(r31)
-	stfs     f2, 0x26c(r31)
-	lwz      r12, 0(r31)
-	lwz      r12, 8(r12)
-	mtctr    r12
-	bctrl
-	lfs      f2, 0x270(r31)
-	lfs      f1, 0x274(r31)
-	stfs     f2, 0x68(r1)
-	lfs      f7, lbl_805195D0@sda21(r2)
-	lfs      f0, 0x278(r31)
-	stfs     f1, 0x6c(r1)
-	fmuls    f3, f1, f7
-	lwz      r3, 0x68(r1)
-	fmuls    f1, f2, f7
-	stfs     f0, 0x70(r1)
-	fmuls    f4, f0, f7
-	lwz      r0, 0x6c(r1)
-	stw      r3, 0x2c(r1)
-	lfs      f2, 0x38(r1)
-	stw      r0, 0x30(r1)
-	lfs      f0, 0x3c(r1)
-	fadds    f8, f2, f1
-	lfs      f1, 0x40(r1)
-	lwz      r0, 0x70(r1)
-	fadds    f5, f0, f3
-	lfs      f3, 0x2c(r1)
-	fadds    f9, f1, f4
-	stw      r0, 0x34(r1)
-	lfs      f4, 0x30(r1)
-	stfs     f3, 0x224(r31)
-	lfs      f3, 0x34(r1)
-	stfs     f4, 0x228(r31)
-	lfs      f6, lbl_805195D4@sda21(r2)
-	stfs     f3, 0x22c(r31)
-	lfs      f3, 0x228(r31)
-	lfs      f4, 0x224(r31)
-	fmuls    f3, f3, f5
-	lfs      f5, 0x22c(r31)
-	fmadds   f3, f4, f8, f3
-	fmadds   f3, f5, f9, f3
-	stfs     f3, 0x230(r31)
-	lfs      f3, 0x270(r31)
-	lfs      f4, 0x274(r31)
-	fneg     f3, f3
-	lfs      f5, 0x278(r31)
-	fneg     f8, f4
-	fneg     f9, f5
-	stfs     f3, 0x5c(r1)
-	frsp     f3, f3
-	frsp     f4, f8
-	stfs     f8, 0x60(r1)
-	frsp     f5, f9
-	lwz      r0, 0x5c(r1)
-	fmuls    f3, f3, f7
-	stfs     f9, 0x64(r1)
-	lwz      r3, 0x60(r1)
-	fmuls    f4, f4, f7
-	stw      r0, 0x20(r1)
-	fmuls    f5, f5, f7
-	lwz      r0, 0x64(r1)
-	fadds    f7, f2, f3
-	stw      r3, 0x24(r1)
-	lfs      f3, 0x20(r1)
-	fadds    f8, f0, f4
-	stw      r0, 0x28(r1)
-	fadds    f9, f1, f5
-	lfs      f4, 0x24(r1)
-	stfs     f3, 0x234(r31)
-	lfs      f3, 0x28(r1)
-	stfs     f4, 0x238(r31)
-	stfs     f3, 0x23c(r31)
-	lfs      f3, 0x238(r31)
-	lfs      f4, 0x234(r31)
-	fmuls    f3, f3, f8
-	lfs      f5, 0x23c(r31)
-	fmadds   f3, f4, f7, f3
-	fmadds   f3, f5, f9, f3
-	stfs     f3, 0x240(r31)
-	lfs      f7, 0x268(r31)
-	lfs      f5, 0x26c(r31)
-	fmuls    f3, f7, f6
-	lfs      f8, 0x264(r31)
-	fmuls    f4, f5, f6
-	stfs     f7, 0x54(r1)
-	fadds    f9, f0, f3
-	stfs     f8, 0x50(r1)
-	fadds    f10, f1, f4
-	stfs     f5, 0x58(r1)
-	lwz      r0, 0x50(r1)
-	fmuls    f3, f8, f6
-	lwz      r3, 0x54(r1)
-	stw      r0, 0x14(r1)
-	lwz      r0, 0x58(r1)
-	fadds    f7, f2, f3
-	stw      r3, 0x18(r1)
-	lfs      f3, 0x14(r1)
-	stw      r0, 0x1c(r1)
-	lfs      f4, 0x18(r1)
-	stfs     f3, 0x244(r31)
-	lfs      f3, 0x1c(r1)
-	stfs     f4, 0x248(r31)
-	stfs     f3, 0x24c(r31)
-	lfs      f3, 0x248(r31)
-	lfs      f4, 0x244(r31)
-	fmuls    f3, f3, f9
-	lfs      f5, 0x24c(r31)
-	fmadds   f3, f4, f7, f3
-	fmadds   f3, f5, f10, f3
-	stfs     f3, 0x250(r31)
-	lfs      f3, 0x264(r31)
-	lfs      f4, 0x268(r31)
-	fneg     f3, f3
-	lfs      f5, 0x26c(r31)
-	fneg     f7, f4
-	fneg     f8, f5
-	stfs     f3, 0x44(r1)
-	frsp     f3, f3
-	frsp     f4, f7
-	stfs     f7, 0x48(r1)
-	frsp     f5, f8
-	lwz      r0, 0x44(r1)
-	fmuls    f3, f3, f6
-	stfs     f8, 0x4c(r1)
-	lwz      r3, 0x48(r1)
-	fmuls    f4, f4, f6
-	stw      r0, 8(r1)
-	fmuls    f5, f5, f6
-	lwz      r0, 0x4c(r1)
-	fadds    f3, f2, f3
-	stw      r3, 0xc(r1)
-	lfs      f2, 8(r1)
-	fadds    f4, f0, f4
-	stw      r0, 0x10(r1)
-	fadds    f5, f1, f5
-	lfs      f1, 0xc(r1)
-	stfs     f2, 0x254(r31)
-	lfs      f0, 0x10(r1)
-	stfs     f1, 0x258(r31)
-	stfs     f0, 0x25c(r31)
-	lfs      f0, 0x258(r31)
-	lfs      f1, 0x254(r31)
-	fmuls    f0, f0, f4
-	lfs      f2, 0x25c(r31)
-	fmadds   f0, f1, f3, f0
-	fmadds   f0, f2, f5, f0
-	stfs     f0, 0x260(r31)
-	lwz      r31, 0xac(r1)
-	lwz      r0, 0xb4(r1)
-	mtlr     r0
-	addi     r1, r1, 0xb0
-	blr
-	*/
+	Vector3f dir3 = -mGateDirection;
+	Vec normal3;
+	normal3.x          = dir3.x;
+	normal3.y          = dir3.y;
+	normal3.z          = dir3.z;
+	Vector3f plane3vec = pos + Vector3f(normal3) * 76.5f;
+	mPlanes[3].updatePlane(plane3vec, normal3);
 }
 
 /**

@@ -56,8 +56,6 @@ struct SeMgr : public PSSystem::SingletonBase<SeMgr> {
 
 	SeMgr();
 
-	virtual ~SeMgr() { } // _08 (weak)
-
 	void playMessageVoice(u32, bool);
 	void stopMessageVoice();
 
@@ -66,6 +64,11 @@ struct SeMgr : public PSSystem::SingletonBase<SeMgr> {
 		for (u8 i = 0; i < 8; i++) {
 			mSetSeList[i]->exec();
 		}
+	}
+
+	inline JAISound* startSetSe(SetSeId id, JAInter::Object* obj, u32 soundID, u32 flag)
+	{
+		return mSetSeList[id]->startSound(obj, soundID, flag);
 	}
 
 	// _00 VTBL

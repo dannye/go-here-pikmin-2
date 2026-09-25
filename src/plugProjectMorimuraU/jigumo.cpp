@@ -386,17 +386,32 @@ void Obj::outWaterCallback()
 	efx::ArgScale fxArg(mPosition, mScaleModifier);
 
 	switch (getStateID()) {
-	case JIGUMO_Attack:
-		mEfxAttack->create(&fxArg);
+	case JIGUMO_Attack: {
+#if defined(VERSION_PAL)
+		if (!isEvent(0, EB_Bittered))
+#endif
+			mEfxAttack->create(&fxArg);
+
 		mEfxAttackW->fade();
 		break;
-	case JIGUMO_Carry:
-		mEfxBack->create(&fxArg);
+	}
+	case JIGUMO_Carry: {
+#if defined(VERSION_PAL)
+		if (!isEvent(0, EB_Bittered))
+#endif
+			mEfxBack->create(&fxArg);
+
 		mEfxBackW->fade();
 		break;
-	case JIGUMO_Return:
-		mEfxSmoke->create(&fxArg);
+	}
+	case JIGUMO_Return: {
+#if defined(VERSION_PAL)
+		if (!isEvent(0, EB_Bittered))
+#endif
+			mEfxSmoke->create(&fxArg);
+
 		break;
+	}
 	}
 }
 
@@ -410,19 +425,28 @@ void Obj::inWaterCallback(WaterBox* wb)
 	efx::ArgScale fxArg(mPosition, mScaleModifier);
 
 	switch (getStateID()) {
-	case JIGUMO_Attack:
+	case JIGUMO_Attack: {
 		mEffectPosition   = mPosition;
 		mEffectPosition.y = *mWaterBox->getSeaHeightPtr();
-		mEfxAttackW->create(&fxArg);
+#if defined(VERSION_PAL)
+		if (!isEvent(0, EB_Bittered))
+#endif
+			mEfxAttackW->create(&fxArg);
 		mEfxAttack->fade();
 		break;
-	case JIGUMO_Carry:
-		mEfxBackW->create(&fxArg);
+	}
+	case JIGUMO_Carry: {
+#if defined(VERSION_PAL)
+		if (!isEvent(0, EB_Bittered))
+#endif
+			mEfxBackW->create(&fxArg);
 		mEfxBack->fade();
 		break;
-	case JIGUMO_Return:
+	}
+	case JIGUMO_Return: {
 		mEfxSmoke->fade();
 		break;
+	}
 	}
 }
 
@@ -489,7 +513,7 @@ void Obj::doSimulationGround(f32 step)
 	targetVel.y        = mCurrentVelocity.y;
 
 	Vector3f currentVelocity = mCurrentVelocity;
-	Vector3f velocityChange  = targetVel - currentVelocity;
+	Vector3f velocityChange  = Vector3f::sub2(targetVel, currentVelocity);
 
 	// Calculate the change in velocity and apply it, including acceleration
 	mCurrentVelocity = mCurrentVelocity + (velocityChange) * (step / C_PARMS->mCreatureProps.mProps.mAccel());
@@ -523,6 +547,9 @@ void Obj::doSimulationGround(f32 step)
  */
 void Obj::onKill(CreatureKillArg* killArg)
 {
+#if defined(VERSION_PAL)
+	effectStop();
+#endif
 	EnemyBase::onKill(killArg);
 	killNest();
 }
@@ -635,10 +662,11 @@ void Obj::walkFunc()
 
 	// if we're carrying and not attacking (assuming a flag is not set, which is the default)
 	if (stateID == JIGUMO_Carry || (!C_PARMS->_8FC && (stateID == JIGUMO_Return || stateID == JIGUMO_Miss))) {
-		Vector3f seperation = mGoalPosition;
-		seperation -= mPosition;
+		f32 x = mGoalPosition.x - mPosition.x;
+		f32 y = mGoalPosition.y - mPosition.y;
+		f32 z = mGoalPosition.z - mPosition.z;
 
-		f32 distance = _sqrtf2(SQUARE(seperation.x) + SQUARE(seperation.y) + SQUARE(seperation.z));
+		f32 distance = sqrtfClamped(SQUARE(x) + SQUARE(y) + SQUARE(z));
 		// f32 dist = mGoalPosition.distance(mPosition);
 		if (distance < 0.0f) {
 			distance = 0.0f;
@@ -646,15 +674,16 @@ void Obj::walkFunc()
 
 		// Calculate the pre-turn angle based on the distance and territory radius
 		// mTurnModifier is 0.05f by default (5% every frame)
-		f32 preTurnAngle = (C_PARMS->mTurnModifier * (distance * (360.0f * (1.0f / territoryRadius))));
+		f32 preTurnAngle = (distance * (360.0f * (1.0f / territoryRadius)));
+		preTurnAngle     = C_PARMS->mTurnModifier * preTurnAngle;
 		f32 degreeAngle  = turningFactor * (f32)sin(180.0f + preTurnAngle); // f2
 
 		if (!C_PARMS->mIsGradualTurnActive) { // does not run by default, but forces angle to 0
 			degreeAngle = 0.0f;
 		}
 
-		degreeAngle *= mCarryAngleSpeed;        // angle goes from 0 to whatever the degAngle factor is over time
-		f32 turnAngle = TORADIANS(degreeAngle); // f30
+		f32 turnAngle = degreeAngle * mCarryAngleSpeed; // angle goes from 0 to whatever the degAngle factor is over time
+		turnAngle     = TORADIANS(turnAngle);           // f30
 
 		mCarryAngleSpeed += 0.1f;
 
@@ -1445,6 +1474,12 @@ void Obj::calcBaseTrMatrix()
 		if (isConstrained()) {
 			isMoving = 0.0f;
 		}
+
+#if defined(VERSION_PAL)
+		if (isEvent(0, EB_Bittered)) {
+			isMoving = 0.0f;
+		}
+#endif
 
 		mPosition.y += mClimbingAccel * (isMoving * C_PARMS->_91C);
 

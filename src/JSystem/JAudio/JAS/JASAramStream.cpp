@@ -88,105 +88,17 @@ JASAramStream::JASAramStream()
     , mUseStereo(0)
 {
 	for (int i = 0; i < 6; i++) {
-		mChannels[i]       = nullptr;
-		mSampleData[0][i]  = 0;
-		mSampleData[1][i]  = 0;
-		mChannelData[0][i] = 1.0f;
-		mChannelData[1][i] = 0.5f;
-		mChannelData[2][i] = 0.0f;
-		mChannelData[3][i] = 0.0f;
+		mChannels[i]      = nullptr;
+		mSampleData[0][i] = 0;
+		mSampleData[1][i] = 0;
+		mChannelVolume[i] = 1.0f;
+		mChannelPan[i]    = 0.5f;
+		mChannelFxMix[i]  = 0.0f;
+		mChannelDolby[i]  = 0.0f;
 	}
 	for (int i = 0; i < 6; i++) {
 		mMixData[i] = 0;
 	}
-	/*
-	li       r0, 0
-	lfs      f3, lbl_80516EB0@sda21(r2)
-	stw      r0, 0x198(r3)
-	lfs      f2, lbl_80516EB4@sda21(r2)
-	stb      r0, 0x19c(r3)
-	lfs      f1, lbl_80516EB8@sda21(r2)
-	stb      r0, 0x19d(r3)
-	lfs      f0, lbl_80516EB0@sda21(r2)
-	stb      r0, 0x19e(r3)
-	stw      r0, 0x1a0(r3)
-	stw      r0, 0x1a4(r3)
-	stw      r0, 0x1a8(r3)
-	stw      r0, 0x1ac(r3)
-	stb      r0, 0x1b0(r3)
-	stw      r0, 0x1b4(r3)
-	stfs     f3, 0x1b8(r3)
-	stw      r0, 0x1f8(r3)
-	stw      r0, 0x1fc(r3)
-	stw      r0, 0x200(r3)
-	stb      r0, 0x204(r3)
-	stw      r0, 0x208(r3)
-	stw      r0, 0x21c(r3)
-	stw      r0, 0x238(r3)
-	stw      r0, 0x23c(r3)
-	stw      r0, 0x240(r3)
-	stw      r0, 0x244(r3)
-	sth      r0, 0x248(r3)
-	sth      r0, 0x24a(r3)
-	stw      r0, 0x24c(r3)
-	stw      r0, 0x250(r3)
-	stw      r0, 0x254(r3)
-	stb      r0, 0x258(r3)
-	stw      r0, 0x25c(r3)
-	stw      r0, 0x260(r3)
-	stfs     f2, 0x264(r3)
-	stfs     f2, 0x268(r3)
-	stb      r0, 0x2d8(r3)
-	stw      r0, 0x180(r3)
-	sth      r0, 0x220(r3)
-	sth      r0, 0x22c(r3)
-	stfs     f2, 0x26c(r3)
-	stfs     f1, 0x284(r3)
-	stfs     f0, 0x29c(r3)
-	stfs     f0, 0x2b4(r3)
-	stw      r0, 0x184(r3)
-	sth      r0, 0x222(r3)
-	sth      r0, 0x22e(r3)
-	stfs     f2, 0x270(r3)
-	stfs     f1, 0x288(r3)
-	stfs     f0, 0x2a0(r3)
-	stfs     f0, 0x2b8(r3)
-	stw      r0, 0x188(r3)
-	sth      r0, 0x224(r3)
-	sth      r0, 0x230(r3)
-	stfs     f2, 0x274(r3)
-	stfs     f1, 0x28c(r3)
-	stfs     f0, 0x2a4(r3)
-	stfs     f0, 0x2bc(r3)
-	stw      r0, 0x18c(r3)
-	sth      r0, 0x226(r3)
-	sth      r0, 0x232(r3)
-	stfs     f2, 0x278(r3)
-	stfs     f1, 0x290(r3)
-	stfs     f0, 0x2a8(r3)
-	stfs     f0, 0x2c0(r3)
-	stw      r0, 0x190(r3)
-	sth      r0, 0x228(r3)
-	sth      r0, 0x234(r3)
-	stfs     f2, 0x27c(r3)
-	stfs     f1, 0x294(r3)
-	stfs     f0, 0x2ac(r3)
-	stfs     f0, 0x2c4(r3)
-	stw      r0, 0x194(r3)
-	sth      r0, 0x22a(r3)
-	sth      r0, 0x236(r3)
-	stfs     f2, 0x280(r3)
-	stfs     f1, 0x298(r3)
-	stfs     f0, 0x2b0(r3)
-	stfs     f0, 0x2c8(r3)
-	sth      r0, 0x2cc(r3)
-	sth      r0, 0x2ce(r3)
-	sth      r0, 0x2d0(r3)
-	sth      r0, 0x2d2(r3)
-	sth      r0, 0x2d4(r3)
-	sth      r0, 0x2d6(r3)
-	blr
-	*/
 }
 
 /**
@@ -195,13 +107,9 @@ JASAramStream::JASAramStream()
  */
 void JASAramStream::init(u32 dataOffs, u32 dataLen, JASAramStreamCallback callback, void* p4)
 {
-	const f32 x = 0.0f;
-	const f32 y = 1.0f;
-	const f32 z = 0.5f;
-
 	mDataOffset = dataOffs;
 	mDataLength = dataLen;
-	_1B8        = 0;
+	_1B8        = 0.0f;
 	mPauseFlags = 0;
 	_19C        = 0.01;
 	_19D        = 0;
@@ -209,85 +117,20 @@ void JASAramStream::init(u32 dataOffs, u32 dataLen, JASAramStreamCallback callba
 	mNumBlocks  = 0;
 
 	for (int i = 0; i < 6; i++) {
-		mChannelData[0][i] = y;
-		mChannelData[1][i] = z;
-		mChannelData[2][i] = x;
-		mChannelData[3][i] = x;
+		mChannelVolume[i] = 1.0f;
+		mChannelPan[i]    = 0.5f;
+		mChannelFxMix[i]  = 0.0f;
+		mChannelDolby[i]  = 0.0f;
 	}
 
-	mVolume     = y;
-	mPitch      = y;
+	mVolume     = 1.0f;
+	mPitch      = 1.0f;
 	mUseStereo  = 0;
 	mMixData[0] = -1;
 	mCallback   = callback;
 	_244        = p4;
 	OSInitMessageQueue(&mMsgQueueA, mMsgSlotsA, ARRAY_SIZE(mMsgSlotsA));
 	OSInitMessageQueue(&mMsgQueueB, mMsgSlotsB, ARRAY_SIZE(mMsgSlotsB));
-	/*
-	.loc_0x0:
-	  stwu      r1, -0x10(r1)
-	  mflr      r0
-	  lfs       f0, -0x74B0(r2)
-	  li        r9, 0
-	  stw       r0, 0x14(r1)
-	  lis       r8, 0x1
-	  lfs       f2, -0x74AC(r2)
-	  subi      r0, r8, 0x1
-	  stw       r31, 0xC(r1)
-	  mr        r31, r3
-	  lfs       f1, -0x74A8(r2)
-	  stw       r4, 0x238(r3)
-	  addi      r4, r31, 0x40
-	  stw       r5, 0x23C(r3)
-	  li        r5, 0x10
-	  stfs      f0, 0x1B8(r3)
-	  lfs       f0, -0x74B0(r2)
-	  stb       r9, 0x19E(r3)
-	  stb       r9, 0x19C(r3)
-	  stb       r9, 0x19D(r3)
-	  stb       r9, 0x204(r3)
-	  sth       r9, 0x24A(r3)
-	  stfs      f2, 0x26C(r3)
-	  stfs      f1, 0x284(r3)
-	  stfs      f0, 0x29C(r3)
-	  stfs      f0, 0x2B4(r3)
-	  stfs      f2, 0x270(r3)
-	  stfs      f1, 0x288(r3)
-	  stfs      f0, 0x2A0(r3)
-	  stfs      f0, 0x2B8(r3)
-	  stfs      f2, 0x274(r3)
-	  stfs      f1, 0x28C(r3)
-	  stfs      f0, 0x2A4(r3)
-	  stfs      f0, 0x2BC(r3)
-	  stfs      f2, 0x278(r3)
-	  stfs      f1, 0x290(r3)
-	  stfs      f0, 0x2A8(r3)
-	  stfs      f0, 0x2C0(r3)
-	  stfs      f2, 0x27C(r3)
-	  stfs      f1, 0x294(r3)
-	  stfs      f0, 0x2AC(r3)
-	  stfs      f0, 0x2C4(r3)
-	  stfs      f2, 0x280(r3)
-	  stfs      f1, 0x298(r3)
-	  stfs      f0, 0x2B0(r3)
-	  stfs      f0, 0x2C8(r3)
-	  stfs      f2, 0x264(r3)
-	  stfs      f2, 0x268(r3)
-	  stb       r9, 0x2D8(r3)
-	  sth       r0, 0x2CC(r3)
-	  stw       r6, 0x240(r3)
-	  stw       r7, 0x244(r3)
-	  bl        0x46260
-	  addi      r3, r31, 0x20
-	  addi      r4, r31, 0x80
-	  li        r5, 0x4
-	  bl        0x46250
-	  lwz       r0, 0x14(r1)
-	  lwz       r31, 0xC(r1)
-	  mtlr      r0
-	  addi      r1, r1, 0x10
-	  blr
-	*/
 }
 
 /**
@@ -573,8 +416,8 @@ bool JASAramStream::load()
 	u32* preBuffer = (u32*)sReadBuffer;
 	u32 size       = mDataOffset + (mCurrentLoadIndex * sBlockSize);
 	for (int i = 0; i < mNumBlocks; i++) {
-		if (JKRMainRamToAram((u8*)(sReadBuffer + (preBuffer[1] * i + 0x20)), size + (i * (sBlockSize * mBlockCount)), preBuffer[1],
-		                     Switch_0, 0, nullptr, -1, nullptr)
+		if (JKRMainRamToAram((u8*)(sReadBuffer + 0x20 + preBuffer[1] * i), size + (i * (sBlockSize * mBlockCount)), preBuffer[1], Switch_0,
+		                     0, nullptr, -1, nullptr)
 		    == 0) {
 			sFatalErrorFlag = true;
 			return false;
@@ -584,10 +427,12 @@ bool JASAramStream::load()
 	mCurrentLoadIndex++;
 
 	if (mCurrentLoadIndex >= mMaxLoadIndex) {
-		int nextBlock = mCurrentBlock + (mMaxLoadIndex - 1);
+		int nextBlock = mCurrentBlock;
+		nextBlock += mMaxLoadIndex - 1;
 		if (mLoopFlag) {
 			while (nextBlock > numMaxBlocks) {
-				nextBlock = (nextBlock - numMaxBlocks) + adjustedBlockCount;
+				nextBlock -= numMaxBlocks;
+				nextBlock += adjustedBlockCount;
 			}
 		}
 		if (nextBlock == numMaxBlocks || nextBlock + 2 == numMaxBlocks) {
@@ -609,227 +454,6 @@ bool JASAramStream::load()
 		mCurrentBlock = adjustedBlockCount;
 	}
 	return true;
-	/*
-	stwu     r1, -0x30(r1)
-	mflr     r0
-	stw      r0, 0x34(r1)
-	stmw     r26, 0x18(r1)
-	mr       r27, r3
-	bl       OSDisableInterrupts
-	lwz      r4, 0x208(r27)
-	stw      r3, 8(r1)
-	addi     r0, r4, -1
-	stw      r0, 0x208(r27)
-	bl       OSRestoreInterrupts
-	lbz      r0, sFatalErrorFlag__13JASAramStream@sda21(r13)
-	cmplwi   r0, 0
-	beq      lbl_800A9824
-	li       r3, 0
-	b        lbl_800A9A84
-
-lbl_800A9824:
-	lbz      r0, 0x204(r27)
-	cmplwi   r0, 0
-	beq      lbl_800A9838
-	li       r3, 0
-	b        lbl_800A9A84
-
-lbl_800A9838:
-	lhz      r4, 0x248(r27)
-	cmplwi   r4, 0
-	bne      lbl_800A9860
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	lis      r3, 0x38E38E39@ha
-	addi     r3, r3, 0x38E38E39@l
-	slwi     r0, r0, 4
-	mulhwu   r0, r3, r0
-	srwi     r5, r0, 1
-	b        lbl_800A9868
-
-lbl_800A9860:
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	srwi     r5, r0, 1
-
-lbl_800A9868:
-	lwz      r3, 0x260(r27)
-	cmplwi   r4, 0
-	lwz      r4, 0x25c(r27)
-	addi     r0, r3, -1
-	divwu    r31, r0, r5
-	bne      lbl_800A989C
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	lis      r3, 0x38E38E39@ha
-	addi     r3, r3, 0x38E38E39@l
-	slwi     r0, r0, 4
-	mulhwu   r0, r3, r0
-	srwi     r0, r0, 1
-	b        lbl_800A98A4
-
-lbl_800A989C:
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	srwi     r0, r0, 1
-
-lbl_800A98A4:
-	divwu    r30, r4, r0
-	lwz      r4, 0x200(r27)
-	cmplw    r4, r31
-	ble      lbl_800A98BC
-	li       r3, 0
-	b        lbl_800A9A84
-
-lbl_800A98BC:
-	lwz      r3, sBlockSize__13JASAramStream@sda21(r13)
-	lhz      r0, 0x24a(r27)
-	mullw    r3, r3, r0
-	addi     r0, r3, 0x20
-	mullw    r3, r4, r0
-	mr       r5, r0
-	addi     r6, r3, 0x40
-	bne      lbl_800A98E4
-	lwz      r0, 0x1f0(r27)
-	subf     r5, r6, r0
-
-lbl_800A98E4:
-	lwz      r4, sReadBuffer__13JASAramStream@sda21(r13)
-	addi     r3, r27, 0x1bc
-	li       r7, 1
-	bl       DVDReadPrio
-	cmpwi    r3, 0
-	bge      lbl_800A990C
-	li       r0, 1
-	li       r3, 0
-	stb      r0, sFatalErrorFlag__13JASAramStream@sda21(r13)
-	b        lbl_800A9A84
-
-lbl_800A990C:
-	lwz      r3, 0x1fc(r27)
-	li       r28, 0
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	lwz      r4, 0x238(r27)
-	mullw    r0, r3, r0
-	lwz      r29, sReadBuffer__13JASAramStream@sda21(r13)
-	add      r26, r4, r0
-	b        lbl_800A9988
-
-lbl_800A992C:
-	lwz      r3, sBlockSize__13JASAramStream@sda21(r13)
-	li       r6, 0
-	lwz      r0, 0x250(r27)
-	li       r7, 0
-	lwz      r5, 4(r29)
-	li       r8, 0
-	mullw    r0, r3, r0
-	lwz      r4, sReadBuffer__13JASAramStream@sda21(r13)
-	li       r9, -1
-	li       r10, 0
-	mullw    r3, r5, r28
-	addi     r3, r3, 0x20
-	mullw    r0, r28, r0
-	add      r3, r4, r3
-	add      r4, r26, r0
-	bl       mainRamToAram__7JKRAramFPUcUlUl15JKRExpandSwitchUlP7JKRHeapiPUl
-	cmplwi   r3, 0
-	bne      lbl_800A9984
-	li       r0, 1
-	li       r3, 0
-	stb      r0, sFatalErrorFlag__13JASAramStream@sda21(r13)
-	b        lbl_800A9A84
-
-lbl_800A9984:
-	addi     r28, r28, 1
-
-lbl_800A9988:
-	lhz      r0, 0x24a(r27)
-	cmpw     r28, r0
-	blt      lbl_800A992C
-	lwz      r3, 0x1fc(r27)
-	addi     r0, r3, 1
-	stw      r0, 0x1fc(r27)
-	lwz      r0, 0x1fc(r27)
-	lwz      r3, 0x1f8(r27)
-	cmplw    r0, r3
-	blt      lbl_800A9A58
-	lbz      r0, 0x258(r27)
-	lwz      r4, 0x200(r27)
-	cmplwi   r0, 0
-	add      r4, r3, r4
-	addi     r4, r4, -1
-	beq      lbl_800A99DC
-	b        lbl_800A99D4
-
-lbl_800A99CC:
-	subf     r4, r31, r4
-	add      r4, r4, r30
-
-lbl_800A99D4:
-	cmplw    r4, r31
-	bgt      lbl_800A99CC
-
-lbl_800A99DC:
-	cmplw    r4, r31
-	beq      lbl_800A99F0
-	addi     r0, r4, 2
-	cmplw    r0, r31
-	bne      lbl_800A9A0C
-
-lbl_800A99F0:
-	lwz      r0, 0x250(r27)
-	addi     r3, r27, 0x20
-	li       r4, 5
-	li       r5, 1
-	stw      r0, 0x1f8(r27)
-	bl       OSSendMessage
-	b        lbl_800A9A18
-
-lbl_800A9A0C:
-	lwz      r3, 0x250(r27)
-	addi     r0, r3, -1
-	stw      r0, 0x1f8(r27)
-
-lbl_800A9A18:
-	mr       r3, r29
-	mr       r4, r27
-	li       r5, 0
-	b        lbl_800A9A44
-
-lbl_800A9A28:
-	lha      r0, 8(r3)
-	addi     r5, r5, 1
-	sth      r0, 0x220(r4)
-	lha      r0, 0xa(r3)
-	addi     r3, r3, 4
-	sth      r0, 0x22c(r4)
-	addi     r4, r4, 2
-
-lbl_800A9A44:
-	lhz      r0, 0x24a(r27)
-	cmpw     r5, r0
-	blt      lbl_800A9A28
-	li       r0, 0
-	stw      r0, 0x1fc(r27)
-
-lbl_800A9A58:
-	lwz      r3, 0x200(r27)
-	addi     r0, r3, 1
-	stw      r0, 0x200(r27)
-	lwz      r0, 0x200(r27)
-	cmplw    r0, r31
-	ble      lbl_800A9A80
-	lbz      r0, 0x258(r27)
-	cmplwi   r0, 0
-	beq      lbl_800A9A80
-	stw      r30, 0x200(r27)
-
-lbl_800A9A80:
-	li       r3, 1
-
-lbl_800A9A84:
-	lmw      r26, 0x18(r1)
-	lwz      r0, 0x34(r1)
-	mtlr     r0
-	addi     r1, r1, 0x30
-	blr
-	*/
 }
 
 /**
@@ -932,12 +556,14 @@ void JASAramStream::updateChannel(u32 command, JASChannel* chan, JASDsp::TChanne
 				sFatalErrorFlag = true;
 			}
 
-			f32 adjustedReadOffset = f32(_1B4) * f32(mFileSize - mAramSize);
+			f32 adjustedReadOffset = f32(_1B4);
+			adjustedReadOffset *= f32(mFileSize - mAramSize);
 			if (_1B4 < -1) {
 				adjustedReadOffset += f32(mNextReadOffset);
 			}
 
-			_1B8 = adjustedReadOffset / f32(mSampleRate);
+			adjustedReadOffset /= f32(mSampleRate);
+			_1B8 = adjustedReadOffset;
 
 			if (mNextReadOffset + 400 >= mFileSize && !_1B0) {
 				if (mLoopFlag) {
@@ -1067,568 +693,6 @@ void JASAramStream::updateChannel(u32 command, JASChannel* chan, JASDsp::TChanne
 	}
 
 	chan->setPauseFlag(mPauseFlags != 0);
-	/*
-	stwu     r1, -0x50(r1)
-	mflr     r0
-	stw      r0, 0x54(r1)
-	stmw     r24, 0x30(r1)
-	mr       r27, r3
-	mr       r28, r5
-	mr       r29, r6
-	lhz      r0, 0x248(r3)
-	cmplwi   r0, 0
-	bne      lbl_800A9B94
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	lis      r3, 0x38E38E39@ha
-	addi     r3, r3, 0x38E38E39@l
-	slwi     r0, r0, 4
-	mulhwu   r0, r3, r0
-	srwi     r31, r0, 1
-	b        lbl_800A9B9C
-
-lbl_800A9B94:
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	srwi     r31, r0, 1
-
-lbl_800A9B9C:
-	cmpwi    r4, 1
-	beq      lbl_800A9BC0
-	bge      lbl_800A9BB4
-	cmpwi    r4, 0
-	bge      lbl_800A9C08
-	b        lbl_800AA27C
-
-lbl_800A9BB4:
-	cmpwi    r4, 3
-	bge      lbl_800AA27C
-	b        lbl_800AA17C
-
-lbl_800A9BC0:
-	lwz      r0, 0x198(r27)
-	cmplwi   r0, 0
-	bne      lbl_800AA27C
-	stw      r28, 0x198(r27)
-	li       r4, 0
-	lwz      r0, 0x24c(r27)
-	mullw    r0, r31, r0
-	stw      r0, 0x1a4(r27)
-	stw      r4, 0x1a8(r27)
-	stw      r4, 0x1a0(r27)
-	lwz      r3, 0x260(r27)
-	addi     r0, r3, -1
-	divwu    r0, r0, r31
-	stw      r0, 0x1ac(r27)
-	stb      r4, 0x1b0(r27)
-	stw      r4, 0x1b4(r27)
-	stw      r4, 0x21c(r27)
-	b        lbl_800AA27C
-
-lbl_800A9C08:
-	lhz      r0, 8(r29)
-	cmplwi   r0, 0
-	bne      lbl_800AA27C
-	lwz      r0, 0x198(r27)
-	cmplw    r28, r0
-	bne      lbl_800AA0AC
-	li       r6, 0
-	stw      r6, 0x21c(r27)
-	lwz      r3, 0x74(r29)
-	lhz      r0, 0x64(r29)
-	lwz      r4, 0x1a4(r27)
-	add      r7, r3, r0
-	cmplw    r7, r4
-	bgt      lbl_800A9C54
-	lwz      r3, 0x1a8(r27)
-	subf     r0, r7, r4
-	add      r0, r3, r0
-	stw      r0, 0x1a8(r27)
-	b        lbl_800A9D08
-
-lbl_800A9C54:
-	lbz      r0, 0x1b0(r27)
-	cmplwi   r0, 0
-	bne      lbl_800A9C88
-	lwz      r0, 0x1a8(r27)
-	add      r0, r0, r4
-	stw      r0, 0x1a8(r27)
-	lwz      r0, 0x24c(r27)
-	lwz      r3, 0x1a8(r27)
-	mullw    r0, r31, r0
-	subf     r0, r7, r0
-	add      r0, r3, r0
-	stw      r0, 0x1a8(r27)
-	b        lbl_800A9D08
-
-lbl_800A9C88:
-	lwz      r3, 0x1a8(r27)
-	li       r0, -1
-	add      r3, r3, r4
-	stw      r3, 0x1a8(r27)
-	lwz      r3, 0x24c(r27)
-	lwz      r4, 0x110(r29)
-	mullw    r3, r31, r3
-	lwz      r5, 0x1a8(r27)
-	subf     r3, r7, r3
-	subf     r3, r4, r3
-	add      r3, r5, r3
-	stw      r3, 0x1a8(r27)
-	lwz      r4, 0x260(r27)
-	lwz      r3, 0x1a8(r27)
-	subf     r3, r4, r3
-	stw      r3, 0x1a8(r27)
-	lwz      r4, 0x1a8(r27)
-	lwz      r3, 0x25c(r27)
-	add      r3, r4, r3
-	stw      r3, 0x1a8(r27)
-	stw      r6, 0x110(r29)
-	stw      r6, 0x210(r27)
-	lwz      r3, 0x21c(r27)
-	ori      r3, r3, 2
-	stw      r3, 0x21c(r27)
-	lwz      r3, 0x1b4(r27)
-	cmplw    r3, r0
-	bge      lbl_800A9D00
-	addi     r0, r3, 1
-	stw      r0, 0x1b4(r27)
-
-lbl_800A9D00:
-	li       r0, 0
-	stb      r0, 0x1b0(r27)
-
-lbl_800A9D08:
-	lwz      r3, 0x1a8(r27)
-	lwz      r0, 0x260(r27)
-	cmplw    r3, r0
-	ble      lbl_800A9D20
-	li       r0, 1
-	stb      r0, sFatalErrorFlag__13JASAramStream@sda21(r13)
-
-lbl_800A9D20:
-	lwz      r4, 0x25c(r27)
-	lis      r5, 0x4330
-	lwz      r3, 0x260(r27)
-	li       r0, -1
-	lwz      r6, 0x1b4(r27)
-	subf     r3, r4, r3
-	stw      r5, 0x10(r1)
-	lfd      f1, lbl_80516EC0@sda21(r2)
-	cmplw    r6, r0
-	stw      r6, 0x14(r1)
-	lfd      f0, 0x10(r1)
-	stw      r3, 0x1c(r1)
-	fsubs    f2, f0, f1
-	stw      r5, 0x18(r1)
-	lfd      f0, 0x18(r1)
-	fsubs    f0, f0, f1
-	fmuls    f2, f2, f0
-	bge      lbl_800A9D80
-	lwz      r0, 0x1a8(r27)
-	stw      r5, 0x20(r1)
-	stw      r0, 0x24(r1)
-	lfd      f0, 0x20(r1)
-	fsubs    f0, f0, f1
-	fadds    f2, f2, f0
-
-lbl_800A9D80:
-	lwz      r3, 0x254(r27)
-	lis      r0, 0x4330
-	stw      r0, 0x28(r1)
-	lfd      f1, lbl_80516EC0@sda21(r2)
-	stw      r3, 0x2c(r1)
-	lfd      f0, 0x28(r1)
-	fsubs    f0, f0, f1
-	fdivs    f2, f2, f0
-	stfs     f2, 0x1b8(r27)
-	lwz      r3, 0x1a8(r27)
-	lwz      r0, 0x260(r27)
-	addi     r3, r3, 0x190
-	cmplw    r3, r0
-	blt      lbl_800A9EAC
-	lbz      r0, 0x1b0(r27)
-	cmplwi   r0, 0
-	bne      lbl_800A9EAC
-	lbz      r0, 0x258(r27)
-	cmplwi   r0, 0
-	beq      lbl_800A9E1C
-	lwz      r3, 0x1ac(r27)
-	lwz      r0, 0x24c(r27)
-	addi     r3, r3, 1
-	cmplw    r3, r0
-	blt      lbl_800A9DE8
-	li       r3, 0
-
-lbl_800A9DE8:
-	lwz      r4, 0x25c(r27)
-	mullw    r0, r3, r31
-	divwu    r3, r4, r31
-	mullw    r3, r3, r31
-	subf     r3, r3, r4
-	add      r0, r3, r0
-	stw      r0, 0x110(r29)
-	lwz      r0, 0x110(r29)
-	stw      r0, 0x210(r27)
-	lwz      r0, 0x21c(r27)
-	ori      r0, r0, 2
-	stw      r0, 0x21c(r27)
-	b        lbl_800A9E34
-
-lbl_800A9E1C:
-	li       r0, 0
-	sth      r0, 0x102(r29)
-	sth      r0, 0x218(r27)
-	lwz      r0, 0x21c(r27)
-	ori      r0, r0, 8
-	stw      r0, 0x21c(r27)
-
-lbl_800A9E34:
-	lwz      r7, 0x260(r27)
-	li       r0, 1
-	lwz      r5, 0x1ac(r27)
-	divwu    r6, r7, r31
-	lwz      r4, 0x24c(r27)
-	lwz      r3, 0x74(r29)
-	mullw    r6, r6, r31
-	mullw    r5, r5, r31
-	subf     r6, r6, r7
-	mullw    r4, r31, r4
-	add      r5, r6, r5
-	subf     r4, r5, r4
-	subf     r3, r4, r3
-	stw      r3, 0x74(r29)
-	lwz      r3, 0x74(r29)
-	stw      r3, 0x20c(r27)
-	lwz      r3, 0x21c(r27)
-	ori      r3, r3, 1
-	stw      r3, 0x21c(r27)
-	lwz      r3, 0x260(r27)
-	lwz      r4, 0x25c(r27)
-	addi     r3, r3, -1
-	lwz      r5, 0x1ac(r27)
-	divwu    r4, r4, r31
-	divwu    r3, r3, r31
-	subf     r3, r4, r3
-	add      r3, r3, r5
-	addi     r3, r3, 1
-	stw      r3, 0x1ac(r27)
-	stb      r0, 0x1b0(r27)
-
-lbl_800A9EAC:
-	lwz      r3, 0xec(r28)
-	lwz      r0, 0x70(r29)
-	subf.    r3, r3, r0
-	beq      lbl_800A9EC0
-	addi     r3, r3, -1
-
-lbl_800A9EC0:
-	lwz      r0, sBlockSize__13JASAramStream@sda21(r13)
-	lwz      r4, 0x1a0(r27)
-	divwu    r30, r3, r0
-	cmplw    r30, r4
-	beq      lbl_800AA048
-	xor      r0, r4, r30
-	lis      r3, loadToAramTask__13JASAramStreamFPv@ha
-	cntlzw   r0, r0
-	li       r26, 0
-	slw      r0, r4, r0
-	addi     r25, r3, loadToAramTask__13JASAramStreamFPv@l
-	srwi     r24, r0, 0x1f
-	b        lbl_800A9F50
-
-lbl_800A9EF4:
-	lwz      r3, sLoadThread__13JASAramStream@sda21(r13)
-	mr       r4, r25
-	mr       r5, r27
-	bl       sendCmdMsg__13JASTaskThreadFPFPv_vPv
-	cmpwi    r3, 0
-	bne      lbl_800A9F18
-	li       r0, 1
-	stb      r0, sFatalErrorFlag__13JASAramStream@sda21(r13)
-	b        lbl_800A9F5C
-
-lbl_800A9F18:
-	bl       OSDisableInterrupts
-	lwz      r4, 0x208(r27)
-	stw      r3, 8(r1)
-	addi     r0, r4, 1
-	stw      r0, 0x208(r27)
-	bl       OSRestoreInterrupts
-	lwz      r3, 0x1a0(r27)
-	addi     r0, r3, 1
-	stw      r0, 0x1a0(r27)
-	lwz      r3, 0x1a0(r27)
-	lwz      r0, 0x24c(r27)
-	cmplw    r3, r0
-	blt      lbl_800A9F50
-	stw      r26, 0x1a0(r27)
-
-lbl_800A9F50:
-	lwz      r0, 0x1a0(r27)
-	cmplw    r30, r0
-	bne      lbl_800A9EF4
-
-lbl_800A9F5C:
-	cmplwi   r24, 0
-	beq      lbl_800AA078
-	lwz      r3, 0x24c(r27)
-	lwz      r0, 0x1ac(r27)
-	subf     r0, r3, r0
-	stw      r0, 0x1ac(r27)
-	lbz      r0, 0x19d(r27)
-	cmplwi   r0, 0
-	beq      lbl_800A9FE0
-	lbz      r0, 0x1b0(r27)
-	cmplwi   r0, 0
-	bne      lbl_800A9FAC
-	lwz      r0, 0x74(r29)
-	add      r0, r0, r31
-	stw      r0, 0x74(r29)
-	lwz      r0, 0x74(r29)
-	stw      r0, 0x20c(r27)
-	lwz      r0, 0x21c(r27)
-	ori      r0, r0, 1
-	stw      r0, 0x21c(r27)
-
-lbl_800A9FAC:
-	lwz      r3, 0x114(r29)
-	li       r0, 0
-	add      r3, r3, r31
-	stw      r3, 0x114(r29)
-	lwz      r3, 0x114(r29)
-	stw      r3, 0x214(r27)
-	lwz      r3, 0x21c(r27)
-	ori      r3, r3, 4
-	stw      r3, 0x21c(r27)
-	lwz      r3, 0x250(r27)
-	stw      r3, 0x24c(r27)
-	stb      r0, 0x19d(r27)
-	b        lbl_800AA078
-
-lbl_800A9FE0:
-	lwz      r3, 0x250(r27)
-	lwz      r0, 0x24c(r27)
-	addi     r3, r3, -1
-	cmplw    r0, r3
-	beq      lbl_800AA078
-	stw      r3, 0x24c(r27)
-	lwz      r0, 0x114(r29)
-	subf     r0, r31, r0
-	stw      r0, 0x114(r29)
-	lwz      r0, 0x114(r29)
-	stw      r0, 0x214(r27)
-	lwz      r0, 0x21c(r27)
-	ori      r0, r0, 4
-	stw      r0, 0x21c(r27)
-	lbz      r0, 0x1b0(r27)
-	cmplwi   r0, 0
-	bne      lbl_800AA078
-	lwz      r0, 0x74(r29)
-	subf     r0, r31, r0
-	stw      r0, 0x74(r29)
-	lwz      r0, 0x74(r29)
-	stw      r0, 0x20c(r27)
-	lwz      r0, 0x21c(r27)
-	ori      r0, r0, 1
-	stw      r0, 0x21c(r27)
-	b        lbl_800AA078
-
-lbl_800AA048:
-	lwz      r0, 0x208(r27)
-	cmplwi   r0, 0
-	bne      lbl_800AA078
-	lbz      r0, sSystemPauseFlag__13JASAramStream@sda21(r13)
-	cmplwi   r0, 0
-	bne      lbl_800AA078
-	lbz      r0, 0x19e(r27)
-	rlwinm   r0, r0, 0, 0x1f, 0x1d
-	stb      r0, 0x19e(r27)
-	lbz      r0, 0x19e(r27)
-	rlwinm   r0, r0, 0, 0x1e, 0x1c
-	stb      r0, 0x19e(r27)
-
-lbl_800AA078:
-	lwz      r3, 0x74(r29)
-	lhz      r0, 0x64(r29)
-	add      r0, r3, r0
-	stw      r0, 0x1a4(r27)
-	lwz      r3, 0x250(r27)
-	lwz      r4, 0x208(r27)
-	addi     r0, r3, -2
-	cmplw    r4, r0
-	blt      lbl_800AA0FC
-	lbz      r0, 0x19e(r27)
-	ori      r0, r0, 4
-	stb      r0, 0x19e(r27)
-	b        lbl_800AA0FC
-
-lbl_800AA0AC:
-	lwz      r0, 0x21c(r27)
-	clrlwi.  r0, r0, 0x1f
-	beq      lbl_800AA0C0
-	lwz      r0, 0x20c(r27)
-	stw      r0, 0x74(r29)
-
-lbl_800AA0C0:
-	lwz      r0, 0x21c(r27)
-	rlwinm.  r0, r0, 0, 0x1e, 0x1e
-	beq      lbl_800AA0D4
-	lwz      r0, 0x210(r27)
-	stw      r0, 0x110(r29)
-
-lbl_800AA0D4:
-	lwz      r0, 0x21c(r27)
-	rlwinm.  r0, r0, 0, 0x1d, 0x1d
-	beq      lbl_800AA0E8
-	lwz      r0, 0x214(r27)
-	stw      r0, 0x114(r29)
-
-lbl_800AA0E8:
-	lwz      r0, 0x21c(r27)
-	rlwinm.  r0, r0, 0, 0x1c, 0x1c
-	beq      lbl_800AA0FC
-	lhz      r0, 0x218(r27)
-	sth      r0, 0x102(r29)
-
-lbl_800AA0FC:
-	lwz      r0, 0x180(r27)
-	li       r3, 0
-	cmplw    r28, r0
-	beq      lbl_800AA160
-	lwz      r0, 0x184(r27)
-	li       r3, 1
-	cmplw    r28, r0
-	beq      lbl_800AA160
-	lwz      r0, 0x188(r27)
-	li       r3, 2
-	cmplw    r28, r0
-	beq      lbl_800AA160
-	lwz      r0, 0x18c(r27)
-	li       r3, 3
-	cmplw    r28, r0
-	beq      lbl_800AA160
-	lwz      r0, 0x190(r27)
-	li       r3, 4
-	cmplw    r28, r0
-	beq      lbl_800AA160
-	lwz      r0, 0x194(r27)
-	li       r3, 5
-	cmplw    r28, r0
-	beq      lbl_800AA160
-	li       r3, 6
-
-lbl_800AA160:
-	slwi     r0, r3, 1
-	add      r3, r27, r0
-	lha      r0, 0x220(r3)
-	sth      r0, 0x104(r29)
-	lha      r0, 0x22c(r3)
-	sth      r0, 0x106(r29)
-	b        lbl_800AA27C
-
-lbl_800AA17C:
-	lwz      r3, 0x180(r27)
-	li       r4, 0
-	li       r0, 0
-	cmplw    r28, r3
-	bne      lbl_800AA198
-	stw      r0, 0x180(r27)
-	b        lbl_800AA1A4
-
-lbl_800AA198:
-	cmplwi   r3, 0
-	beq      lbl_800AA1A4
-	li       r4, 1
-
-lbl_800AA1A4:
-	lwz      r3, 0x184(r27)
-	cmplw    r28, r3
-	bne      lbl_800AA1B8
-	stw      r0, 0x184(r27)
-	b        lbl_800AA1C4
-
-lbl_800AA1B8:
-	cmplwi   r3, 0
-	beq      lbl_800AA1C4
-	li       r4, 1
-
-lbl_800AA1C4:
-	lwz      r3, 0x188(r27)
-	cmplw    r28, r3
-	bne      lbl_800AA1D8
-	stw      r0, 0x188(r27)
-	b        lbl_800AA1E4
-
-lbl_800AA1D8:
-	cmplwi   r3, 0
-	beq      lbl_800AA1E4
-	li       r4, 1
-
-lbl_800AA1E4:
-	lwz      r3, 0x18c(r27)
-	cmplw    r28, r3
-	bne      lbl_800AA1F8
-	stw      r0, 0x18c(r27)
-	b        lbl_800AA204
-
-lbl_800AA1F8:
-	cmplwi   r3, 0
-	beq      lbl_800AA204
-	li       r4, 1
-
-lbl_800AA204:
-	lwz      r3, 0x190(r27)
-	cmplw    r28, r3
-	bne      lbl_800AA218
-	stw      r0, 0x190(r27)
-	b        lbl_800AA224
-
-lbl_800AA218:
-	cmplwi   r3, 0
-	beq      lbl_800AA224
-	li       r4, 1
-
-lbl_800AA224:
-	lwz      r3, 0x194(r27)
-	cmplw    r28, r3
-	bne      lbl_800AA238
-	stw      r0, 0x194(r27)
-	b        lbl_800AA244
-
-lbl_800AA238:
-	cmplwi   r3, 0
-	beq      lbl_800AA244
-	li       r4, 1
-
-lbl_800AA244:
-	clrlwi.  r0, r4, 0x18
-	bne      lbl_800AA27C
-	li       r0, 1
-	lis      r3, finishTask__13JASAramStreamFPv@ha
-	stb      r0, 0x204(r27)
-	addi     r4, r3, finishTask__13JASAramStreamFPv@l
-	mr       r5, r27
-	lwz      r3, sLoadThread__13JASAramStream@sda21(r13)
-	bl       sendCmdMsg__13JASTaskThreadFPFPv_vPv
-	cmpwi    r3, 0
-	bne      lbl_800AA27C
-	li       r0, 1
-	stb      r0, sFatalErrorFlag__13JASAramStream@sda21(r13)
-	b        lbl_800AA294
-
-lbl_800AA27C:
-	lbz      r4, 0x19e(r27)
-	mr       r3, r28
-	neg      r0, r4
-	or       r0, r0, r4
-	srwi     r4, r0, 0x1f
-	bl       setPauseFlag__10JASChannelFb
-
-lbl_800AA294:
-	lmw      r24, 0x30(r1)
-	lwz      r0, 0x54(r1)
-	mtlr     r0
-	addi     r1, r1, 0x50
-	blr
-	*/
 }
 
 /**
@@ -1683,13 +747,13 @@ int JASAramStream::channelProc()
 
 	for (int i = 0; i < mNumBlocks; i++) {
 		JASChannel* channel     = mChannels[i];
-		channel->mVolumeChannel = mVolume * mChannelData[0][i];
+		channel->mVolumeChannel = mVolume * mChannelVolume[i];
 		channel->mPitchChannel  = mPitch;
 		if (mUseStereo) {
-			channel->mPanChannel = mChannelData[1][i];
+			channel->mPanChannel = mChannelPan[i];
 		}
-		channel->mFxMixChannel = mChannelData[2][i];
-		channel->mDolbyChannel = mChannelData[3][i];
+		channel->mFxMixChannel = mChannelFxMix[i];
+		channel->mDolbyChannel = mChannelDolby[i];
 	}
 
 	if (!mUseStereo && mNumBlocks == 2) {
@@ -1767,49 +831,4 @@ void JASAramStream::channelStop(u16 p1)
 			mChannels[i]->release(p1);
 		}
 	}
-	/*
-	stwu     r1, -0x20(r1)
-	mflr     r0
-	stw      r0, 0x24(r1)
-	stw      r31, 0x1c(r1)
-	stw      r30, 0x18(r1)
-	li       r30, 0
-	stw      r29, 0x14(r1)
-	mr       r29, r4
-	stw      r28, 0x10(r1)
-	mr       r28, r3
-	mr       r31, r28
-	b        lbl_800AA718
-
-lbl_800AA6FC:
-	lwz      r3, 0x180(r31)
-	cmplwi   r3, 0
-	beq      lbl_800AA710
-	mr       r4, r29
-	bl       release__10JASChannelFUs
-
-lbl_800AA710:
-	addi     r31, r31, 4
-	addi     r30, r30, 1
-
-lbl_800AA718:
-	lhz      r0, 0x24a(r28)
-	cmpw     r30, r0
-	blt      lbl_800AA6FC
-	lwz      r0, 0x24(r1)
-	lwz      r31, 0x1c(r1)
-	lwz      r30, 0x18(r1)
-	lwz      r29, 0x14(r1)
-	lwz      r28, 0x10(r1)
-	mtlr     r0
-	addi     r1, r1, 0x20
-	blr
-	.4byte 0x00000000 // unknown instruction
-	.4byte 0x00000000 // unknown instruction
-	.4byte 0x00000000 // unknown instruction
-	.4byte 0x00000000 // unknown instruction
-	.4byte 0x00000000 // unknown instruction
-	.4byte 0x00000000 // unknown instruction
-	.4byte 0x00000000 // unknown instruction
-	*/
 }

@@ -351,12 +351,11 @@ struct Creature : public CellObject {
 
 	inline f32 getSquarePositionTo(Vector3f& pos)
 	{
-		f32 z       = getPosition().z;
-		f32 x       = getPosition().x;
-		f32 targetZ = pos.z;
-		f32 targetX = pos.x;
-		f32 diffZ   = targetZ - z;
-		f32 diffX   = targetX - x;
+		f32 x, z;
+		z         = getPosition().z;
+		x         = getPosition().x;
+		f32 diffX = pos.x - x;
+		f32 diffZ = pos.z - z;
 		return SQUARE(diffX) + SQUARE(diffZ);
 	}
 
@@ -364,9 +363,12 @@ struct Creature : public CellObject {
 
 	inline f32 getPositionTo(Vector3f& pos)
 	{
+		f32 diffX, diffZ;
 		Vector3f position(getPosition().x, 0.0f, getPosition().z);
-		f32 sqrDist = pos.sqrDistance2D(position);
-		return sqrtf(sqrDist);
+		diffX       = pos.x - position.x;
+		diffZ       = pos.z - position.z;
+		f32 sqrDist = diffX * diffX + diffZ * diffZ;
+		return sqrtfInPlace(sqrDist);
 	}
 
 	inline f32 getAngDist(Creature* other)
@@ -452,6 +454,32 @@ struct Creature : public CellObject {
 	void updateCell();
 	void updateLOD(AILODParm& lod);
 	void updateStick(Vector3f& position);
+
+	// these are required by Creature::resolveOneColl (and only resolveOneColl)
+
+	static inline void setCollisionAcceleration(Vector3f& outputVec, const Vector3f& inputVec, f32 massRatio, f32 fps, f32 groundFactor,
+	                                            f32 airFactor)
+	{
+		outputVec.x = inputVec.x * (groundFactor * fps * massRatio);
+		outputVec.z = inputVec.z * (groundFactor * fps * massRatio);
+		outputVec.y = inputVec.y * (airFactor * fps * massRatio);
+	}
+
+	static inline void setOpposingCollisionAcceleration(Vector3f& outputVec, const Vector3f& inputVec, f32 massRatio, f32 fps,
+	                                                    f32 groundFactor, f32 airFactor)
+	{
+		outputVec.x = -inputVec.x * (groundFactor * fps * massRatio);
+		outputVec.z = -inputVec.z * (groundFactor * fps * massRatio);
+		outputVec.y = -inputVec.y * (airFactor * fps * massRatio);
+	}
+
+	static inline void addCollisionAcceleration(Vector3f& outputVec, const Vector3f& inputVec, f32 massRatio, f32 fps, f32 groundFactor,
+	                                            f32 airFactor)
+	{
+		outputVec.x += inputVec.x * (groundFactor * fps * massRatio);
+		outputVec.z += inputVec.z * (groundFactor * fps * massRatio);
+		outputVec.y += inputVec.y * (airFactor * fps * massRatio);
+	}
 
 	// unused/inlined
 	bool isStickLeader();

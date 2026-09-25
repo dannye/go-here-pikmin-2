@@ -10,10 +10,11 @@
 namespace Game {
 struct PlayChallengeGameData {
 	enum Flags {
-		PCGDF_Unset          = 0x0,
-		PCGDF_IsPlayable     = 0x1,
-		PCGDF_IsNotVirgin    = 0x2,
-		PCGDF_IsLouieRescued = 0x4,
+		PCGDF_Unset          = 0x0, // default
+		PCGDF_IsPlayable     = 0x1, // set if challenge mode is unlocked
+		PCGDF_IsNotVirgin    = 0x2, // set if challenge mode has been played before
+		PCGDF_IsLouieRescued = 0x4, // set when Louie is recovered from the Titan Dweevil
+		                            // (why is this in challenge mode flags instead of common story flags?)
 	};
 
 	struct CourseState {
@@ -58,7 +59,7 @@ struct PlayChallengeGameData {
 		}
 
 		BitFlag<u16> mFlags;      // _00
-		Highscore mHighscores[2]; // _04, 0 = 1Player, 1 = 2Player
+		Highscore mHighscores[2]; // _04, 0 = 1 Player, 1 = 2 Player
 	};
 
 	PlayChallengeGameData();
@@ -74,6 +75,14 @@ struct PlayChallengeGameData {
 };
 
 struct PlayCommonData {
+	enum Flags {
+		CommonData_Unset           = 0x0, // default
+		CommonData_DebtRepayed     = 0x1, // set when debt is repayed on any file
+		CommonData_AllTreasures    = 0x2, // set when all treasures are collected on any file
+		CommonData_LouieDarkSecret = 0x4, // set when Louie's Dark Secret is unlocked
+		                                  // See PlayChallengeGameData::Flags for the Louie Rescued from Titan Dweevil flag
+	};
+
 	PlayCommonData();
 
 	void reset();
@@ -116,7 +125,7 @@ struct PlayCommonData {
 	bool challenge_checkJustKunsho(int);
 	void challenge_setKunsho(int);
 
-	BitFlag<u8> mChallengeFlags;          // _00
+	BitFlag<u8> mCommonStoryFlags;        // _00
 	Highscore** mHiScoreClear;            // _04 (for repay debt)
 	Highscore** mHiScoreComplete;         // _08 (for all treasures)
 	PlayChallengeGameData mChallengeData; // _0C
@@ -126,7 +135,7 @@ namespace CommonSaveData {
 // Size: 0x48
 struct Mgr : public PlayCommonData {
 
-	enum Flags { SaveFlag_SerialNoSet = 1 };
+	enum Flags { SaveFlag_SerialNoSet = 1, SaveFlag_Language = 2 };
 
 	enum SoundMode { SM_Mono = 0, SM_Stereo = 1, SM_SurroundSound = 2 };
 	Mgr();
@@ -149,6 +158,11 @@ struct Mgr : public PlayCommonData {
 	void setDeflicker();
 	void setDeflicker(bool);
 
+#if defined(VERSION_PAL)
+	void setLanguage();
+	void setLanguage(int language);
+#endif
+
 	int mSaveCount;      // _18, how many times the game has been saved, doesn't seem to have a purpose
 	u32 mTime;           // _1C
 	char mFileIndex;     // _20
@@ -164,7 +178,7 @@ struct Mgr : public PlayCommonData {
 	u8 mIsRumble;        // _3B
 	u8 mIsRubyFont;      // _3C, japanese version leftover, mini font in cutscenes
 	u8 mUseDeflicker;    // _3D
-	u8 mRegion;          // _3E
+	u8 mLanguage;        // _3E
 	char _3F;            // _3F
 	BitFlag<u16> mFlags; // _40
 	bool mDoSaveOptions; // _42

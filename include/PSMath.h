@@ -10,35 +10,64 @@
 
 namespace PSMath {
 
-template <typename A, typename B>
-inline f32 calcSquareDistance(const A& a, const B& b)
+inline f32 abs(f32 value)
 {
-	Vector3f delta(a.x - b.x, a.y - b.y, a.z - b.z);
-	Vector3f squares = delta * delta;
+	return (value >= 0.0f) ? value : -value;
+}
+
+inline Vec squareComponents(const Vec& vector)
+{
+	Vec squares = vector;
+	squares.x *= squares.x;
+	squares.y *= squares.y;
+	squares.z *= squares.z;
+	return squares;
+}
+
+inline f32 calcSquareMagnitude(const Vec& vector)
+{
+	Vec squares = squareComponents(vector);
 	return squares.z + (squares.x + squares.y);
 }
 
-static inline Vec squareComponents(Vec vector)
+inline f32 calcLength(const Vec& vector)
 {
-	vector.x *= vector.x;
-	vector.y *= vector.y;
-	vector.z *= vector.z;
-	return vector;
+	Vec squares  = squareComponents(vector);
+	f32 distance = squares.z + (squares.x + squares.y);
+	return sqrtfInPlace(distance);
 }
 
 template <typename A, typename B>
-inline f32 calcDistance(const A& from, B to)
+inline f32 calcSquareDistance(const A& a, const B& b)
 {
-	JGeometry::TVec3f fromGeometry;
-	fromGeometry.set(from.x, from.y, from.z);
-	Vec fromPosition = fromGeometry;
-
+	JGeometry::TVec3f positionGeometry;
+	positionGeometry.x = b.x;
+	positionGeometry.y = b.y;
+	positionGeometry.z = b.z;
+	Vec position       = positionGeometry;
 	JGeometry::TVec3f deltaGeometry;
-	deltaGeometry.set(to.x - fromPosition.x, to.y - fromPosition.y, to.z - fromPosition.z);
-	Vec delta    = deltaGeometry;
-	Vec squares  = squareComponents(delta);
-	f32 distance = squares.z + (squares.x + squares.y);
-	return sqrtf(distance);
+	deltaGeometry.x = a.x - position.x;
+	deltaGeometry.y = a.y - position.y;
+	deltaGeometry.z = a.z - position.z;
+	Vec delta       = deltaGeometry;
+	return calcSquareMagnitude(delta);
+}
+
+inline JGeometry::TVec3f toVec(const Vector3f& position)
+{
+	JGeometry::TVec3f geometry;
+	geometry.set(position.x, position.y, position.z);
+	return geometry;
+}
+
+template <typename A, typename B>
+inline f32 calcDistance(A from, B to)
+{
+	Vec delta;
+	delta.x = from.x - to.x;
+	delta.y = from.y - to.y;
+	delta.z = from.z - to.z;
+	return calcLength(delta);
 }
 
 inline f32 calcMagnitude(const Vec& vector)
@@ -47,14 +76,14 @@ inline f32 calcMagnitude(const Vec& vector)
 }
 
 template <typename A, typename B>
-inline f32 calcDistanceXZ(const A& a, B b)
+inline f32 calcDistanceXZ(const A& a, const B& b)
 {
 	f32 x = a.x - b.x;
 	x *= x;
 	f32 z = a.z - b.z;
 	z *= z;
 	f32 distance = x + z;
-	return sqrtf(distance);
+	return sqrtfInPlace(distance);
 }
 
 inline bool calcDistanceInRange(const Vec& pos1, const Vec& pos2, f32 a1, f32 a2)

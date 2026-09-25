@@ -50,7 +50,6 @@ struct TList {
 	struct const_iterator {
 		const_iterator() { mNode = nullptr; }
 		const_iterator(const TNode_* node) { mNode = node; }
-		const_iterator(const const_iterator& other) { mNode = other.mNode; }
 
 		inline void operator=(const_iterator& other) { mNode = other.mNode; }
 		inline Element operator*() const { return mNode->getElement(); }
@@ -200,7 +199,7 @@ struct TList_pointer : public TList_pointer_void {
 		    : Base::const_iterator(it)
 		{
 		}
-		const T& operator*() const { return *(const T*)&this->mNode->getElement(); }
+		const T& operator*() const { return *(const T*)(this->mNode + 1); }
 		const_iterator& operator++()
 		{
 			Base::const_iterator::operator++();
@@ -219,8 +218,14 @@ struct TList_pointer : public TList_pointer_void {
 	const_iterator begin() const { return const_iterator(Base::const_iterator(this->mNode.mNext)); }
 	const_iterator end() const { return const_iterator(Base::const_iterator(&this->mNode)); }
 	iterator insert(iterator where, const T& value) { return iterator(Base::insert(where, (void* const&)value)); }
+	void push_back(const T& value) { insert(end(), value); }
 	T& back() { return *--end(); }
-	void pop_back() { erase(--end()); }
+	void pop_back()
+	{
+		Base::iterator it = Base::end();
+		--it;
+		Base::erase(it);
+	}
 	iterator erase(iterator where) { return iterator(Base::erase(where)); }
 };
 
